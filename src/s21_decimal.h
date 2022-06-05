@@ -2,7 +2,7 @@
 #define SRC_S21_DECIMAL_H_
 
 typedef struct {
-  int bits[4];
+  unsigned bits[4];
 } s21_decimal;
 
 #define TRUE 1
