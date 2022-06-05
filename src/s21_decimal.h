@@ -47,6 +47,10 @@ int s21_is_greater_or_equal(s21_decimal, s21_decimal);
 // Равно ==
 int s21_is_equal(s21_decimal, s21_decimal);
 
+bool compare_null(s21_decimal op);
+int compare_sign(s21_decimal op1, s21_decimal op2);
+int compare_digit(s21_decimal op1, s21_decimal op2);
+
 // Не равно !=
 int s21_is_not_equal(s21_decimal, s21_decimal);
 
