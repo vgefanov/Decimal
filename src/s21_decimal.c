@@ -92,6 +92,11 @@ int s21_is_equal(s21_decimal op1, s21_decimal op2) {
   return result;
 }
 
+// Записывает в dst 0
+void decimal_default(s21_decimal *dst) {
+  for (int i = 0; i < 4; i++) dst->bits[i] = 0;
+}
+
 // Возвращает результат умножения указанного Decimal на -1.
 int s21_negate(s21_decimal value, s21_decimal *result) {
   *result = value;
@@ -100,6 +105,48 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
   } else {
     set_sign(result, 1);
   }
+  return 0;
+}
+
+// преобразовывает int в decimal
+int s21_from_int_to_decimal(int src, s21_decimal *dst) {
+  s21_decimal_set_default(dst);
+  if (src < 0) {
+    src *= -1;
+    set_sign(dst, 1);
+  }
+  dst->bits[0] = src;
+  return 0;
+}
+
+s21_decimal div_10(s21_decimal src) {
+  s21_decimal dst;
+  decimal_default(&dst);
+  return dst;
+}
+
+s21_decimal cut_decimal(s21_decimal src) {
+  s21_decimal dst;
+  decimal_default(&dst);
+  set_sign(&dst, s21_get_sign(src));
+  dst = src;
+  for (int i = get_cexp(src); i > 0; i--) {
+    dst = div_10(dst);
+  }
+  return dst;
+}
+
+int s21_from_decimal_to_int(s21_decimal src, int *dst) {
+  int res = 1;
+  src = cut_decimal(src);
+  if (src.bits[0] <= ((unsigned int)INT_MAX) && !src.bits[1] && !src.bits[2]) {
+    *dst = src.bits[0];
+    res = 0;
+    if (get_sign(src)) {
+      *dst *= -1;
+    }
+  }
+  return res;
 }
 
 void main() {
