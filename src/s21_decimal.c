@@ -99,17 +99,17 @@ int s21_is_equal(s21_decimal op1, s21_decimal op2) {
 int s21_negate(s21_decimal value, s21_decimal *result) { return 0; }
 
 
-void main() {
-    s21_decimal test = { 1, 0, 0, 0x80100000 };
-    printf("%d\n", get_sign(test));
+// void main() {
+//     s21_decimal test = { 1, 0, 0, 0x80100000 };
+//     printf("%d\n", get_sign(test));
 
-    s21_decimal test2 = { 0x7f7f7f7f, 0x7f7f7f7f, 0x7f7f, 0x80100000 };
-    print_big_decimal(to_big_decimal(test2));
-    // 4 fafa fafa fafa fafa faf6
-    print_big_decimal(scale(to_big_decimal(test2)));
+//     s21_decimal test2 = { 0x7f7f7f7f, 0x7f7f7f7f, 0x7f7f, 0x80100000 };
+//     print_big_decimal(to_big_decimal(test2));
+//     // 4 fafa fafa fafa fafa faf6
+//     print_big_decimal(scale(to_big_decimal(test2)));
 
-    // 23 86f2 6fc1 0000
-    print_big_decimal(normalize(to_big_decimal(test), 0x10));
-    s21_decimal test3 = { 0x6fc10000, 0x002386f2, 0, 0x80200000 };
-    printf("%d", s21_is_equal(test, test3));
-}
+//     // 23 86f2 6fc1 0000
+//     print_big_decimal(normalize(to_big_decimal(test), 0x10));
+//     s21_decimal test3 = { 0x6fc10000, 0x002386f2, 0, 0x80200000 };
+//     printf("%d", s21_is_equal(test, test3));
+// }
