@@ -83,22 +83,13 @@ big_decimal normalize(big_decimal op, int cexp_add) {
 //     return result;
 // }
 
-// // Равно ==
-// int s21_is_equal(s21_decimal op1, s21_decimal op2) {
-//   bool result = FALSE;
-//   if ((compare_null(op1) != 1) && (compare_null(op2) != 1) &&
-//       (compare_sign(op1, op2) == 0) && (compare_digit(op1, op2) == 0))
-//     result = TRUE;
-//   return result;
-// }
-
 // сравнивает децимал с 0
 bool compare_null(s21_decimal op) {
   big_decimal big_op = to_big_decimal(op);
-  int result = 1;
+  int result = TRUE;
   for (int i = 5; i >= 0; i--) {
     if (big_op.bits[i] != 0) {
-      result = 0;
+      result = FALSE;
       break;
     }
   }
@@ -110,10 +101,10 @@ int compare_sign(s21_decimal op1, s21_decimal op2) {
   big_decimal big_op1 = to_big_decimal(op1);
   big_decimal big_op2 = to_big_decimal(op2);
   int result = 0;
-  if (big_op1.sign == 1 && big_op2.sign == 0)
-    result = -1;
-  else if (big_op2.sign == 1 && big_op1.sign == 0)
-    result = 1;
+  if (big_op1.sign == 1 && big_op2.sign == 1) result = -2;
+  if (big_op1.sign == 1 && big_op2.sign == 0) result = -1;
+  if (big_op1.sign == 0 && big_op2.sign == 1) result = 1;
+  if (big_op1.sign == 0 && big_op2.sign == 0) result = 2;
   return result;
 }
 
@@ -140,23 +131,69 @@ int compare_digit(s21_decimal op1, s21_decimal op2) {
   return result;
 }
 
-// // Меньше <
-// int s21_is_less(s21_decimal op1, s21_decimal op2) {
-//   int result;
-//   big_decimal big_op1 = to_big_decimal(op1);
-//   big_decimal big_op2 = to_big_decimal(op2);
-// }
+// Меньше <
+int s21_is_less(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if ((compare_sign(op1, op2) == 2 && compare_digit(op1, op2) == -1) ||
+      (compare_sign(op1, op2) == -2 && compare_digit(op1, op2) == 1) ||
+      (compare_null(op1) == FALSE && compare_null(op2) == FALSE &&
+       compare_sign(op1, op2) == -1))
+    result = TRUE;
+  return result;
+}
+
+// Меньше или равно <=
+int s21_is_less_or_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_less(op1, op2) == TRUE || s21_is_equal(op1, op2) == TRUE)
+    result = TRUE;
+  return result;
+}
+
+// Больше >
+int s21_is_greater(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_less(op1, op2) == FALSE && s21_is_equal(op1, op2) == FALSE)
+    result = TRUE;
+  return result;
+}
+
+// Больше или равно >=
+int s21_is_greater_or_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_greater(op1, op2) == TRUE || s21_is_equal(op1, op2) == TRUE)
+    result = TRUE;
+  return result;
+}
+
+// Равно ==
+int s21_is_equal(s21_decimal op1, s21_decimal op2) {
+  bool result = FALSE;
+  if (((compare_null(op1) == TRUE) && (compare_null(op2) == TRUE)) ||
+      (compare_null(op1) == FALSE) && (compare_null(op2) == FALSE) &&
+          (compare_digit(op1, op2) == 0) &&
+          ((compare_sign(op1, op2) == -2) || (compare_sign(op1, op2) == 2)))
+    result = TRUE;
+  return result;
+}
+
+// Не равно !=
+int s21_is_not_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_equal(op1, op2) == FALSE) result = TRUE;
+  return result;
+}
 
 // Возвращает результат умножения указанного Decimal на -1.
 int s21_negate(s21_decimal value, s21_decimal *result) { return 0; }
 
 void main() {
-  s21_decimal test = {0, 0, 0, 0};
-  s21_decimal test2 = {0, 0, 0, 0};
-  printf("test=[%d]\n", s21_is_equal(test, test2));
+  s21_decimal test = {3, 0, 0, 0};
+  s21_decimal test2 = {3, 0, 0, 0};
+  printf("test=[%d]\n", s21_is_not_equal(test, test2));
   // printf("test=[%d]\n", compare_null(test));
-  // printf("test=[%d]\n", compare_null(test2));
   // printf("test=[%d]\n", compare_sign(test, test2));
+  // printf("test_sign=[%d]\n", compare_sign(test, test2));
   // printf("test=[%d]\n", compare_digit(test, test2));
   // print_big_decimal(to_big_decimal(test));
   // print_big_decimal(to_big_decimal(test2));
