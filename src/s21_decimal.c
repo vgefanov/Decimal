@@ -14,7 +14,13 @@ typedef struct {
 
 unsigned get_cexp(s21_decimal op) {
   // Возвращает степень коэффициента масштабирования
-  return (op.bits[3] & CEXP) >> 16;
+  return ((op.bits[3] & CEXP) >> 16);
+}
+
+void set_exp(s21_decimal *op, int value) {
+  op->bits[3] &= SIGN;
+  value <<= 16;
+  op->bits[3] |= value;
 }
 
 unsigned get_sign(s21_decimal op) {
@@ -29,6 +35,13 @@ void set_sign(s21_decimal *value, int sign) {
   } else if (sign == 0) {
     value->bits[3] &= ~SIGN;
   }
+}
+
+s21_decimal big_decimal_to_decimal(big_decimal src) {
+  s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
+  set_sign(&result, src.sign);
+  set_exp(&result, src.cexp);
+  return result;
 }
 
 big_decimal to_big_decimal(s21_decimal op) {
@@ -65,6 +78,52 @@ big_decimal normalize(big_decimal op, int cexp_add) {
   return op;
 }
 
+// сравнивает децимал с 0
+bool compare_null(s21_decimal op) {
+  big_decimal big_op = to_big_decimal(op);
+  int result = TRUE;
+  for (int i = 5; i >= 0; i--) {
+    if (big_op.bits[i] != 0) {
+      result = FALSE;
+      break;
+    }
+  }
+  return result;
+}
+// сравнивает знаки двух децималов
+int compare_sign(s21_decimal op1, s21_decimal op2) {
+  big_decimal big_op1 = to_big_decimal(op1);
+  big_decimal big_op2 = to_big_decimal(op2);
+  int result = 0;
+  if (big_op1.sign == 1 && big_op2.sign == 1) result = -2;
+  if (big_op1.sign == 1 && big_op2.sign == 0) result = -1;
+  if (big_op1.sign == 0 && big_op2.sign == 1) result = 1;
+  if (big_op1.sign == 0 && big_op2.sign == 0) result = 2;
+  return result;
+}
+// сравнивает значение двух децималов
+int compare_digit(s21_decimal op1, s21_decimal op2) {
+  big_decimal big_op1 = to_big_decimal(op1);
+  big_decimal big_op2 = to_big_decimal(op2);
+  int result = 0;
+  if (big_op1.cexp > big_op2.cexp) {
+    big_op2 = normalize(big_op2, big_op1.cexp - big_op2.cexp);
+  }
+  if (big_op2.cexp > big_op1.cexp) {
+    big_op1 = normalize(big_op1, big_op2.cexp - big_op1.cexp);
+  }
+  for (int i = 5; i >= 0; i--) {
+    if (big_op1.bits[i] > big_op2.bits[i]) {
+      result = 1;
+      break;
+    } else if (big_op1.bits[i] < big_op2.bits[i]) {
+      result = -1;
+      break;
+    }
+  }
+  return result;
+}
+
 // Операторы сравнения
 
 // Равно ==
@@ -90,6 +149,16 @@ int s21_is_equal(s21_decimal op1, s21_decimal op2) {
     print_big_decimal(big_op1);
     print_big_decimal(big_op2);
   }
+  return result;
+}
+
+int s21_is_less(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if ((compare_sign(op1, op2) == 2 && compare_digit(op1, op2) == -1) ||
+      (compare_sign(op1, op2) == -2 && compare_digit(op1, op2) == 1) ||
+      (compare_null(op1) == FALSE && compare_null(op2) == FALSE &&
+       compare_sign(op1, op2) == -1))
+    result = TRUE;
   return result;
 }
 
@@ -150,18 +219,6 @@ int s21_from_decimal_to_int(s21_decimal src, int *dst) {
   return res;
 }
 
-big_decimal simple_add(big_decimal value_1, big_decimal value_2) {
-  big_decimal result = {{0, 0, 0, 0, 0, 0}, value_1.cexp, 0};
-  unsigned long long accum = 0;
-  for (int i = 0; i < 6; i++) {
-    accum = accum + (unsigned long long)value_1.bits[i] +
-            (unsigned long long)value_2.bits[i];
-    result.bits[i] = (unsigned)accum;
-    accum = accum >> 32;
-  }
-  return result;
-}
-
 int get_bit(big_decimal src, int i) {
   unsigned int bit = 1u << (i % 32);
   return !!(src.bits[i / 32] & bit);
@@ -182,6 +239,15 @@ big_decimal shift_bit_left(big_decimal src) {
   for (int i = 1; i < 192; i++) {
     set_bit(&dst, i, get_bit(src, i - 1));
   }
+  return dst;
+}
+
+big_decimal shift_bit_right(big_decimal src) {
+  big_decimal dst = {0, 0, 0, 0, 0, 0, 0, 0};
+  for (int i = 0; i < 191; i++) {
+    set_bit(&dst, i, get_bit(src, i + 1));
+  }
+  set_bit(&dst, 191, 0);
   return dst;
 }
 
@@ -224,22 +290,132 @@ big_decimal simple_sub(big_decimal value_1, big_decimal value_2) {
   return result;
 }
 
-int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
-  bool res = TRUE;
+// сложение двух положительных
+big_decimal simple_add(big_decimal value_1, big_decimal value_2) {
+  big_decimal result = {{0, 0, 0, 0, 0, 0}, value_1.cexp, 0};
+  unsigned long long accum = 0;
+  for (int i = 0; i < 6; i++) {
+    accum = accum + (unsigned long long)value_1.bits[i] +
+            (unsigned long long)value_2.bits[i];
+    result.bits[i] = (unsigned)accum;
+    accum = accum >> 32;
+  }
+  return result;
+}
 
+int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  bool error = FALSE;
   big_decimal big_op1 = to_big_decimal(value_1);
   big_decimal big_op2 = to_big_decimal(value_2);
   big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 0,
+           exp = 0;
+  if (big_op1.cexp > big_op2.cexp) {
+    big_op2 = normalize(big_op2, big_op1.cexp - big_op2.cexp);
+    exp = big_op1.cexp;
+  }
+  if (big_op2.cexp > big_op1.cexp) {
+    big_op1 = normalize(big_op1, big_op2.cexp - big_op1.cexp);
+    exp = big_op2.cexp;
+  }
+  if (!sign1 && !sign2) {
+    if (s21_is_less(value_1, value_2)) {
+      dest = simple_sub(big_op2, big_op1);
+      sign_res = 1;
+    } else {
+      dest = simple_sub(big_op1, big_op2);
+    }
+  } else if (sign1 && sign2) {
+    dest = simple_add(big_op1, big_op2);
+    sign_res = 1;
+  } else if (sign1 && !sign2) {
+    if (s21_is_less(value_1, value_2)) {
+      dest = simple_sub(big_op2, big_op1);
+    } else {
+      dest = simple_sub(big_op1, big_op2);
+      sign_res = 1;
+    }
+  } else if (!sign1 && sign2) {
+    dest = simple_add(big_op1, big_op2);
+    sign_res = 1;
+  }
+  *result = big_decimal_to_decimal(dest);
+  set_sign(result, sign_res);
+  set_exp(result, exp);
+  return error;
+}
 
+int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  bool error = FALSE;
+  big_decimal big_op1 = to_big_decimal(value_1);
+  big_decimal big_op2 = to_big_decimal(value_2);
+  big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 0,
+           exp = 0;
   if (big_op1.cexp > big_op2.cexp) {
     big_op2 = normalize(big_op2, big_op1.cexp - big_op2.cexp);
   }
   if (big_op2.cexp > big_op1.cexp) {
     big_op1 = normalize(big_op1, big_op2.cexp - big_op1.cexp);
   }
-  dest = simple_add(big_op1, big_op2);
-  print_big_decimal(dest);
-  return res;
+  set_sign(&value_1, 0);
+  set_sign(&value_2, 0);
+  exp = big_op1.cexp;
+  if (!sign1 && !sign2) {
+    dest = simple_add(big_op1, big_op2);
+  } else if (sign1 && sign2) {
+    sign_res = 1;
+    dest = simple_add(big_op1, big_op2);
+  } else if (sign1 && !sign2) {
+    if (s21_is_less(value_1, value_2)) {
+      dest = simple_sub(big_op2, big_op1);
+    } else {
+      dest = simple_sub(big_op1, big_op2);
+      sign_res = 1;
+    }
+  } else if (!sign1 && sign2) {
+    if (s21_is_less(value_1, value_2)) {
+      dest = simple_sub(big_op2, big_op1);
+      sign_res = 1;
+    } else {
+      dest = simple_sub(big_op2, big_op1);
+      sign_res = 1;
+    }
+  }
+
+  *result = big_decimal_to_decimal(dest);
+  set_sign(result, sign_res);
+  set_exp(result, exp);
+  return error;
+}
+
+int big_desimal_is_null(big_decimal value) {
+  bool result = FALSE;
+  int i = 0;
+  for (int i = 0; i < 6; i++)
+    if (value.bits[i]) result = TRUE;
+  return result;
+}
+
+big_decimal big_decimal_mul(s21_decimal value_1, s21_decimal value_2) {
+  big_decimal big_op1 = to_big_decimal(value_1);
+  big_decimal big_op2 = to_big_decimal(value_2);
+  big_decimal dst = {0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned exp = (unsigned)(get_cexp(value_1) + get_cexp(value_2));
+  while (big_desimal_is_null(big_op2)) {
+    if (get_bit(big_op2, 0)) {
+      dst = simple_add(dst, big_op1);
+    }
+    big_op1 = shift_bit_left(big_op1);
+    big_op2 = shift_bit_right(big_op2);
+  }
+  dst.cexp = exp;
+  return dst;
+}
+
+int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  big_decimal res_big = big_decimal_mul(value_1, value_2);
+  *result = big_decimal_to_decimal(res_big);
 }
 
 void test_sub(s21_decimal test, s21_decimal test1, s21_decimal test2) {
@@ -247,30 +423,25 @@ void test_sub(s21_decimal test, s21_decimal test1, s21_decimal test2) {
   print_big_decimal(res);
 }
 
+void test_mul(s21_decimal test, s21_decimal test1, s21_decimal test2) {
+  print_big_decimal(big_decimal_mul(test, test1));
+}
+
 void test_shift(s21_decimal test) {
   big_decimal res = to_big_decimal(test);
   for (int i = 0; i < 50; i++) {
-    res = shift_bit_left(res);
+    res = shift_bit_right(res);
     print_big_decimal(res);
   }
 }
 
-void main() {
-  s21_decimal test = {1, 0, 0, 0x00000000};
-  // printf("%d\n", get_sign(test));
-  print_big_decimal(to_big_decimal(test));
-  //   s21_decimal test1 = {15, 0, 0, 0x00000000};
-  //   print_big_decimal(to_big_decimal(test1));
-  // print_big_decimal(to_big_decimal(test2));
-  // 4 fafa fafa fafa fafa faf6
-  // print_big_decimal(scale(to_big_decimal(test2)));
-
-  // 23 86f2 6fc1 0000
-  // print_big_decimal(normalize(to_big_decimal(test), 0x10));
-  s21_decimal test2 = {0x6fc10000, 0x002386f2, 0, 0x80200000};
-  // print_big_decimal(to_big_decimal(test3));
-  // printf("%d", s21_is_equal(test, test3));
-
-  // test_sub(test, test1, test2);
-  test_shift(test);
-}
+// void main() {
+//   s21_decimal test = {8, 0, 0, 0x00000000};
+//   print_big_decimal(to_big_decimal(test));
+//   s21_decimal test1 = {30, 0, 0, 0x00000000};
+//   print_big_decimal(to_big_decimal(test1));
+//   s21_decimal test2 = {0x6fc10000, 0x002386f2, 0, 0x80200000};
+//   // test_shift(test);
+//   test_mul(test, test1, test2);
+//   // print_big_decimal(to_big_decimal(test2));
+// }
