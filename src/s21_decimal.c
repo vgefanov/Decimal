@@ -95,10 +95,10 @@ int compare_sign(s21_decimal op1, s21_decimal op2) {
   big_decimal big_op1 = to_big_decimal(op1);
   big_decimal big_op2 = to_big_decimal(op2);
   int result = 0;
-  if (big_op1.sign == 1 && big_op2.sign == 1) result = -2;
-  if (big_op1.sign == 1 && big_op2.sign == 0) result = -1;
-  if (big_op1.sign == 0 && big_op2.sign == 1) result = 1;
-  if (big_op1.sign == 0 && big_op2.sign == 0) result = 2;
+  if (big_op1.sign == 1 && big_op2.sign == 1) result = -2;  // (-,-)
+  if (big_op1.sign == 1 && big_op2.sign == 0) result = -1;  // (-,+)
+  if (big_op1.sign == 0 && big_op2.sign == 1) result = 1;   // (+,-)
+  if (big_op1.sign == 0 && big_op2.sign == 0) result = 2;   // (+,+)
   return result;
 }
 // сравнивает значение двух децималов
@@ -123,35 +123,7 @@ int compare_digit(s21_decimal op1, s21_decimal op2) {
   }
   return result;
 }
-
-// Операторы сравнения
-
-// Равно ==
-int s21_is_equal(s21_decimal op1, s21_decimal op2) {
-  bool result = TRUE;
-  big_decimal big_op1 = to_big_decimal(op1);
-  big_decimal big_op2 = to_big_decimal(op2);
-  if (big_op1.sign != big_op2.sign) {
-    result = FALSE;
-  } else {
-    if (big_op1.cexp > big_op2.cexp) {
-      big_op2 = normalize(big_op2, big_op1.cexp - big_op2.cexp);
-    }
-    if (big_op2.cexp > big_op1.cexp) {
-      big_op1 = normalize(big_op1, big_op2.cexp - big_op1.cexp);
-    }
-    for (int i = 0; i < 6; i++) {
-      if (big_op1.bits[i] != big_op2.bits[i]) {
-        result = FALSE;
-        break;
-      }
-    }
-    print_big_decimal(big_op1);
-    print_big_decimal(big_op2);
-  }
-  return result;
-}
-
+// Меньше <
 int s21_is_less(s21_decimal op1, s21_decimal op2) {
   int result = FALSE;
   if ((compare_sign(op1, op2) == 2 && compare_digit(op1, op2) == -1) ||
@@ -159,6 +131,43 @@ int s21_is_less(s21_decimal op1, s21_decimal op2) {
       (compare_null(op1) == FALSE && compare_null(op2) == FALSE &&
        compare_sign(op1, op2) == -1))
     result = TRUE;
+  return result;
+}
+// Меньше или равно <=
+int s21_is_less_or_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_less(op1, op2) == TRUE || s21_is_equal(op1, op2) == TRUE)
+    result = TRUE;
+  return result;
+}
+// Больше >
+int s21_is_greater(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_less(op1, op2) == FALSE && s21_is_equal(op1, op2) == FALSE)
+    result = TRUE;
+  return result;
+}
+// Больше или равно >=
+int s21_is_greater_or_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_greater(op1, op2) == TRUE || s21_is_equal(op1, op2) == TRUE)
+    result = TRUE;
+  return result;
+}
+// Равно ==
+int s21_is_equal(s21_decimal op1, s21_decimal op2) {
+  bool result = FALSE;
+  if (((compare_null(op1) == TRUE) && (compare_null(op2) == TRUE)) ||
+      (compare_null(op1) == FALSE) && (compare_null(op2) == FALSE) &&
+          (compare_digit(op1, op2) == 0) &&
+          ((compare_sign(op1, op2) == -2) || (compare_sign(op1, op2) == 2)))
+    result = TRUE;
+  return result;
+}
+// Не равно !=
+int s21_is_not_equal(s21_decimal op1, s21_decimal op2) {
+  int result = FALSE;
+  if (s21_is_equal(op1, op2) == FALSE) result = TRUE;
   return result;
 }
 
@@ -273,15 +282,15 @@ big_decimal simple_sub(big_decimal value_1, big_decimal value_2) {
     } else if (!bit_value_1 && bit_value_2) {
       if (taken) {
         set_bit(&result, i, 0);
-        taken = TRUE;
+        // taken = TRUE;
       } else {
         set_bit(&result, i, 1);
         taken = TRUE;
       }
     } else if (!bit_value_1 && !bit_value_2) {
       if (taken) {
-        set_bit(&result, i, 0);
-        taken = TRUE;
+        set_bit(&result, i, 1);
+        // taken = FALSE;
       } else {
         set_bit(&result, i, 0);
       }
@@ -310,34 +319,36 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
   big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
   unsigned sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 0,
            exp = 0;
+  set_sign(&value_1, 0);
+  set_sign(&value_2, 0);
   if (big_op1.cexp > big_op2.cexp) {
     big_op2 = normalize(big_op2, big_op1.cexp - big_op2.cexp);
-    exp = big_op1.cexp;
   }
   if (big_op2.cexp > big_op1.cexp) {
     big_op1 = normalize(big_op1, big_op2.cexp - big_op1.cexp);
-    exp = big_op2.cexp;
   }
+  exp = big_op1.cexp;
   if (!sign1 && !sign2) {
     if (s21_is_less(value_1, value_2)) {
       dest = simple_sub(big_op2, big_op1);
       sign_res = 1;
     } else {
       dest = simple_sub(big_op1, big_op2);
+      sign_res = 0;
     }
   } else if (sign1 && sign2) {
-    dest = simple_add(big_op1, big_op2);
-    sign_res = 1;
-  } else if (sign1 && !sign2) {
     if (s21_is_less(value_1, value_2)) {
       dest = simple_sub(big_op2, big_op1);
+      sign_res = 1;
     } else {
       dest = simple_sub(big_op1, big_op2);
-      sign_res = 1;
     }
-  } else if (!sign1 && sign2) {
+  } else if (sign1 && !sign2) {
     dest = simple_add(big_op1, big_op2);
     sign_res = 1;
+  } else if (!sign1 && sign2) {
+    dest = simple_add(big_op1, big_op2);
+    sign_res = 0;
   }
   *result = big_decimal_to_decimal(dest);
   set_sign(result, sign_res);
@@ -418,30 +429,61 @@ int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
   *result = big_decimal_to_decimal(res_big);
 }
 
-void test_sub(s21_decimal test, s21_decimal test1, s21_decimal test2) {
-  big_decimal res = simple_sub(to_big_decimal(test), to_big_decimal(test1));
-  print_big_decimal(res);
-}
+// ******** div!!!!
 
-void test_mul(s21_decimal test, s21_decimal test1, s21_decimal test2) {
-  print_big_decimal(big_decimal_mul(test, test1));
-}
-
-void test_shift(s21_decimal test) {
-  big_decimal res = to_big_decimal(test);
-  for (int i = 0; i < 50; i++) {
-    res = shift_bit_right(res);
-    print_big_decimal(res);
+int greater_big_decimal(big_decimal src1, big_decimal src2) {
+  bool greater = FALSE;
+  for (int i = 5; i >= 0; i--) {
+    if (src1.bits[i] > src2.bits[i]) {
+      greater = TRUE;
+      break;
+    } else if (src1.bits[i] < src2.bits[i]) {
+      break;
+    }
   }
+  return greater;
 }
 
-// void main() {
-//   s21_decimal test = {8, 0, 0, 0x00000000};
-//   print_big_decimal(to_big_decimal(test));
-//   s21_decimal test1 = {30, 0, 0, 0x00000000};
-//   print_big_decimal(to_big_decimal(test1));
-//   s21_decimal test2 = {0x6fc10000, 0x002386f2, 0, 0x80200000};
-//   // test_shift(test);
-//   test_mul(test, test1, test2);
-//   // print_big_decimal(to_big_decimal(test2));
-// }
+int equal_big_decimal(big_decimal src1, big_decimal src2) {
+  bool equal = TRUE;
+  for (int i = 0; i < 6 && equal; i++) {
+    if (src1.bits[i] != src2.bits[i]) {
+      equal = FALSE;
+    }
+  }
+  return equal;
+}
+
+int greater_or_equal_big_decimal(big_decimal src1, big_decimal src2) {
+  int greater_or_equal = FALSE;
+  if (greater_big_decimal(src1, src2) || equal_big_decimal(src1, src2)) {
+    greater_or_equal = TRUE;
+  }
+  return greater_or_equal;
+}
+
+big_decimal simple_div(big_decimal src1, big_decimal src2) {
+  big_decimal dst = {0, 0, 0, 0, 0, 0, 0, 0};
+  int shift = 0;
+  while (!get_bit(src2, 191 - shift)) {
+    shift++;
+  }
+  for (int i = 0; !get_bit(src1, 191 - i); i++) {
+    shift--;
+  }
+  if (shift >= 0) {
+    for (int k = 0; k < shift; k++) {
+      src2 = shift_bit_left(src2);
+    }
+    while (shift >= 0) {
+      set_bit(&dst, 0, greater_or_equal_big_decimal(src1, src2));
+      if (get_bit(dst, 0)) {
+        src1 = simple_sub(src1, src2);
+      }
+      src2 = shift_bit_right(src2);
+      if (shift) dst = shift_bit_left(dst);
+      shift--;
+    }
+  }
+  return dst;
+}
