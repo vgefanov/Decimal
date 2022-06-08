@@ -488,29 +488,35 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
 // Из float
 #define MAX_DECIMAL  79228162514264337593543950335.f
 #define MIN_DECIMAL -79228162514264337593543950335.f
-#define FLOAT2DECIMAL_MASK "%+49.28f"
+#define FLOAT2DECIMAL_MASK "%+.28f"
 #define FLOAT_STR_LEN 50
 
 int s21_from_float_to_decimal(float src, s21_decimal *dst) {
-    // проверка на максимальный decimal
-    memset(dst, 0, sizeof(s21_decimal));
+    // проверка на максимальный decimal??
+    big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
     char *float_str = malloc(FLOAT_STR_LEN);
     sprintf(float_str, FLOAT2DECIMAL_MASK, src);
-    int i = FLOAT_STR_LEN - 1;
-    for (; i > 0 && float_str[i] == '0'; i--) {}
-    float_str[i + 1] = 0;
+    int end_pos = strlen(float_str) - 1;
+    for (; end_pos > 0 && float_str[end_pos] == '0'; end_pos--) {}
+    float_str[end_pos + 1] = 0;
 
-    printf("%s", float_str);
-    //
-
+    // bool after_dot = FALSE;
+    // for (int pos = 0; pos <= end_s; pos++) {
+    //     if (float_str[pos] == '.') {
+    //         after_dot = TRUE;
+    //         continue;
+    //     }
+    //     result = scale_big_decimal(result);
+    //     result.bits[0] += (float_str[pos] - '0');
+    // }
+    printf("%s\n", float_str);
+    print_big_decimal(result);
 
     // union {
     //     float number;
     //     unsigned char  bytes[4];
     // } converter;
     // converter.number = src;
-
-
 
     // printf("%e = %hhx %hhx %hhx %hhx\n", converter.number, converter.bytes[3], converter.bytes[2], converter.bytes[1], converter.bytes[0]);
 
@@ -561,5 +567,5 @@ int main() {
     // printf("%f", result);
 
     s21_decimal r;
-    s21_from_float_to_decimal(MIN_DECIMAL, &r);
+    s21_from_float_to_decimal(65535, &r);
 }
