@@ -4,6 +4,11 @@
 
 typedef struct {
     s21_decimal op1;
+    float       op2;
+} test_struct_df;
+
+typedef struct {
+    s21_decimal op1;
     s21_decimal op2;
     s21_decimal wait;
 } test_struct_ddd;
@@ -303,6 +308,33 @@ START_TEST(test_not_equal) {
 }
 END_TEST
 
+
+// s21_from_float_to_decimal
+// s21_from_decimal_to_float
+
+test_struct_df test_pack_fftd_fdtf[] = {
+    {
+        { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000},
+        -65.125,
+    },
+};
+
+START_TEST(test_fftd) {
+    s21_decimal result;
+    s21_from_float_to_decimal(test_pack_fftd_fdtf[_i].op2, &result);
+    ck_assert_mem_eq(&result, &test_pack_fftd_fdtf[_i].op1, sizeof(s21_decimal));
+}
+END_TEST
+
+START_TEST(test_fdtf) {
+    float result;
+    s21_from_decimal_to_float(test_pack_fftd_fdtf[_i].op1, &result);
+    ck_assert_float_eq(result, test_pack_fftd_fdtf[_i].op2);
+}
+END_TEST
+
+// main
+
 int main() {
     Suite *s = suite_create("s21_decimal test");
     SRunner *sr = srunner_create(s);
@@ -348,6 +380,25 @@ int main() {
     int test_pack_size_not_equal =
         sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
     tcase_add_loop_test(tc, test_not_equal, 0, test_pack_size_not_equal);
+
+    // s21_from_float_to_decimal
+    // s21_from_decimal_to_float
+    int test_pack_size_fftd_fdtf = sizeof(test_pack_fftd_fdtf) / sizeof(test_struct_df);
+    tcase_add_loop_test(tc, test_fftd, 0, test_pack_size_fftd_fdtf);
+    tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fftd_fdtf);
+
+
+    // s21_decimal temp = { 10000, 0, 0, 0x80040000 };
+    // float result;
+    // s21_from_decimal_to_float(temp, &result);
+    // print_decimal(temp);
+    // printf("%f", result);
+
+    // s21_decimal r;
+    // s21_from_float_to_decimal(-65.125, &r);
+    // printf("%f\n", -65.125);
+    // print_decimal(r);
+
 
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);

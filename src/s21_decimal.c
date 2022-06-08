@@ -485,7 +485,7 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
     return 0;
 }
 
-// Из float
+// Преобразовывает из float
 #define MAX_DECIMAL  79228162514264337593543950335.f
 #define MIN_DECIMAL -79228162514264337593543950335.f
 #define FLOAT2DECIMAL_MASK "%+.28f"
@@ -493,40 +493,38 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
 
 int s21_from_float_to_decimal(float src, s21_decimal *dst) {
     // проверка на максимальный decimal??
-    big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
+    big_decimal result = { 0, 0, 0, 0, 0, 0, 0, 0 };
     char *float_str = malloc(FLOAT_STR_LEN);
     sprintf(float_str, FLOAT2DECIMAL_MASK, src);
     int end_pos = strlen(float_str) - 1;
-    for (; end_pos > 0 && float_str[end_pos] == '0'; end_pos--) {}
-    float_str[end_pos + 1] = 0;
-
-    // bool after_dot = FALSE;
-    // for (int pos = 0; pos <= end_s; pos++) {
-    //     if (float_str[pos] == '.') {
-    //         after_dot = TRUE;
-    //         continue;
-    //     }
-    //     result = scale_big_decimal(result);
-    //     result.bits[0] += (float_str[pos] - '0');
-    // }
-    printf("%s\n", float_str);
-    print_big_decimal(result);
-
-    // union {
-    //     float number;
-    //     unsigned char  bytes[4];
-    // } converter;
-    // converter.number = src;
-
-    // printf("%e = %hhx %hhx %hhx %hhx\n", converter.number, converter.bytes[3], converter.bytes[2], converter.bytes[1], converter.bytes[0]);
-
-    // int sign = converter.bytes[3] >> 7;
-    // unsigned char exp = (converter.bytes[3] << 1) + (converter.bytes[2] >> 7) - 0x7f;
-    // unsigned int mantissa = ((converter.bytes[2] & 0x7f) << 16) + (converter.bytes[1] << 8) + converter.bytes[0];
-    // printf("%e = [%hhx] %x E %hhx", converter.number, sign, mantissa, exp);
+    while (float_str[end_pos] == '0') {
+        float_str[end_pos] = 0;
+        end_pos--;
+    }
+    // формируем целочисленное представление
+    bool after_dot = FALSE;
+    int  cexp = 0;
+    for (int pos = 1; float_str[pos]; pos++) {
+        if (float_str[pos] == '.') {
+            after_dot = TRUE;
+        } else {
+            result = scale_big_decimal(result);
+            result.bits[0] += (float_str[pos] - '0');
+            if (after_dot) {
+                cexp++;
+            }
+        }
+    }
+    // расставляем степень и экспоненту
+    result.cexp = cexp;
+    if (float_str[0] == '-') {
+        result.sign = 1;
+    }
+    *dst = big_decimal_to_decimal(result);
+    return 0;
 }
 
-
+// Преобразовывает во float
 int s21_from_decimal_to_float(s21_decimal src, float *dst) {
     // проверки на максимум???
     float result = 0;
@@ -557,15 +555,4 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
         set_sign(result, 1);
     }
     return 0;
-}
-
-int main() {
-    // s21_decimal temp = { 10000, 0, 0, 0x80040000 };
-    // float result;
-    // s21_from_decimal_to_float(temp, &result);
-    // print_decimal(temp);
-    // printf("%f", result);
-
-    s21_decimal r;
-    s21_from_float_to_decimal(65535, &r);
 }
