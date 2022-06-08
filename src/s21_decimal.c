@@ -18,22 +18,14 @@ typedef struct {
 unsigned get_cexp(s21_decimal op) { return (op.bits[3] & CEXP) >> 16; }
 
 // Устанавливает степень коэффициента масштабирования
-void set_cexp(s21_decimal *op, int value) {
-    op->bits[3] &= SIGN;
-    value <<= 16;
-    op->bits[3] |= value;
-}
+void set_cexp(s21_decimal *op, int value) { op->bits[3] = (op->bits[3] & SIGN) | (value << 16); }
 
 // Возвращает знак
 unsigned get_sign(s21_decimal op) { return (op.bits[3] & SIGN) >> 31; }
 
 // Устанавливает знак
 void set_sign(s21_decimal *value, int sign) {
-    if (sign == 1) {
-        value->bits[3] |= SIGN;
-    } else if (sign == 0) {
-        value->bits[3] &= ~SIGN;
-    }
+    value->bits[3] = (sign) ? value->bits[3] | SIGN : value->bits[3] & ~SIGN;
 }
 
 // Конвертирует s21_decimal в big_decimal
@@ -707,6 +699,7 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
 }
 
 // int main() {
+//     printf("%#08x, ", 0b10000010111000100101101011101101)
 //     int result;
 //     s21_decimal op = {10000, 0, 0, 0x00030000 };
 //     print_decimal(op);
