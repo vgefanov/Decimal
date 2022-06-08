@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #define CEXP 0x00FF0000U
 #define SIGN 0x80000000U
@@ -587,12 +588,20 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
 
 // В int
 int s21_from_decimal_to_int(s21_decimal src, int *dst) {
-    s21_decimal div10 = { 10, 0, 0, 0 };
+    int error = 0;
+    big_decimal div10 = { { 10, 0, 0, 0, 0, 0 }, 0, 0 };
+    big_decimal tmp = to_big_decimal(src);
     unsigned cexp = get_cexp(src);
     while(cexp--) {
-        s21_div(src, div10, &src);
+        tmp = simple_div(tmp, div10);
     }
-    print_decimal(div10);
+    unsigned sign = get_sign(src);
+    if ((!sign && (tmp.bits[0] > (unsigned)INT_MAX)) || (sign && (tmp.bits[0] > (unsigned)INT_MAX + 1))) {
+        error = 1;
+    } else {
+        *dst = (int)tmp.bits[0];
+    }
+    return error;
 }
 
 // Преобразовывает во float
@@ -628,9 +637,14 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
     return 0;
 }
 
-int main() {
-    int result;
-    s21_decimal op = {10000, 0, 0, 0x00030000 };
-    print_decimal(op);
-    s21_from_decimal_to_int(op, &result);
-}
+// int main() {
+//     int result = 0;
+//     s21_decimal op = {10000, 0, 0, 0x00000000 };
+//     // s21_decimal op = { INT_MAX, 0, 0, 0x00000000 };
+//     // s21_decimal op = { (unsigned)INT_MAX + 1, 0, 0, 0x00000000 };
+//     // s21_decimal op = { (unsigned)INT_MAX + 1, 0, 0, 0x80000000 };
+//     // s21_decimal op = { (unsigned)INT_MAX + 2, 0, 0, 0x80000000 };
+//     print_decimal(op);
+//     s21_from_decimal_to_int(op, &result);
+//     printf("%i", result);
+// }

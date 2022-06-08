@@ -1,10 +1,10 @@
 // Арифметические операторы
 
-* s21_add - Сложение + int
-* s21_sub - Вычитание - int
-* s21_mul - Умножение *
-* s21_div - Деление /
-* s21_mod - Остаток от деления Mod
+* **[+]** s21_add - Сложение + int
+* **[+]** s21_sub - Вычитание - int
+* **[+]** s21_mul - Умножение *
+* **[+]** s21_div - Деление /
+* **[+]** s21_mod - Остаток от деления Mod
 
 Операторы сравнения
 
@@ -18,9 +18,9 @@
 Преобразователи
 
 * **[+]** s21_from_int_to_decimal - Из int
-* s21_from_float_to_decimal - Из float
-* s21_from_decimal_to_int - В int
-* s21_from_decimal_to_float - В float
+* **[+]** s21_from_float_to_decimal - Из float
+* **[+]** s21_from_decimal_to_int - В int
+* **[+]** s21_from_decimal_to_float - В float
 
 Другие функции
 

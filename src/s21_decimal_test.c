@@ -1,6 +1,12 @@
 #include "s21_decimal.h"
 
 #include <check.h>
+#include <limits.h>
+
+typedef struct {
+    s21_decimal op1;
+    int         op2;
+} test_struct_di;
 
 typedef struct {
     s21_decimal op1;
@@ -367,14 +373,30 @@ START_TEST(test_not_equal) {
 }
 END_TEST
 
+// s21_from_decimal_to_int
+
+test_struct_di test_pack_fdti[] = {
+    { { 10000,                 0x00000000, 0x00000000, 0x00000000 }, 10000 },
+    { { INT_MAX,               0x00000000, 0x00000000, 0x00000000 }, INT_MAX, },
+    { { (unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x80000000 }, INT_MIN, },
+    { { (unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x00000000 }, 0 },
+    { { (unsigned)INT_MAX + 2, 0x00000000, 0x00000000, 0x80000000 }, 0 },
+};
+
+
+START_TEST(test_fdti) {
+    int result = 0;
+    s21_from_decimal_to_int(test_pack_fdti[_i].op1, &result);
+    ck_assert_int_eq(result, test_pack_fdti[_i].op2);
+}
+END_TEST
 
 // s21_from_float_to_decimal
 // s21_from_decimal_to_float
 
 test_struct_df test_pack_fftd_fdtf[] = {
     {
-        { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000},
-        -65.125,
+        { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000}, -65.125,
     },
 };
 
@@ -386,7 +408,7 @@ START_TEST(test_fftd) {
 END_TEST
 
 START_TEST(test_fdtf) {
-    float result;
+    float result = 0;
     s21_from_decimal_to_float(test_pack_fftd_fdtf[_i].op1, &result);
     ck_assert_float_eq(result, test_pack_fftd_fdtf[_i].op2);
 }
@@ -446,12 +468,15 @@ int main() {
         sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
     tcase_add_loop_test(tc, test_not_equal, 0, test_pack_size_not_equal);
 
+    // s21_from_decimal_to_int
+    int test_pack_size_fdti = sizeof(test_pack_fdti) / sizeof(test_struct_di);
+    tcase_add_loop_test(tc, test_fdti, 0, test_pack_size_fdti);
+
     // s21_from_float_to_decimal
     // s21_from_decimal_to_float
     int test_pack_size_fftd_fdtf = sizeof(test_pack_fftd_fdtf) / sizeof(test_struct_df);
     tcase_add_loop_test(tc, test_fftd, 0, test_pack_size_fftd_fdtf);
     tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fftd_fdtf);
-
 
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);
