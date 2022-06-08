@@ -14,6 +14,8 @@ typedef struct {
     unsigned sign;
 } big_decimal;
 
+big_decimal simple_div(big_decimal src1, big_decimal src2);
+
 // Возвращает степень коэффициента масштабирования
 unsigned get_cexp(s21_decimal op) { return (op.bits[3] & CEXP) >> 16; }
 
@@ -49,13 +51,15 @@ big_decimal to_big_decimal(s21_decimal op) {
 // Конвертирует big_decimal в s21_decimal
 s21_decimal big_decimal_to_decimal(big_decimal src) {
     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
-    while (src.bits[3] || src.bits[2] || src.bits[1]) {
+    unsigned cexp = src.cexp;
+    unsigned sign = src.sign;
+    while (src.bits[3] || src.bits[4] || src.bits[5]) {
         src = simple_div(src, ten);
         src.cexp--;
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
-    set_sign(&result, src.sign);
-    set_cexp(&result, src.cexp);
+    set_sign(&result, sign);
+    set_cexp(&result, cexp);
     return result;
 }
 
