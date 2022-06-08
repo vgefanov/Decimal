@@ -48,6 +48,11 @@ big_decimal to_big_decimal(s21_decimal op) {
 
 // Конвертирует big_decimal в s21_decimal
 s21_decimal big_decimal_to_decimal(big_decimal src) {
+    big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
+    while (src.bits[3] || src.bits[2] || src.bits[1]) {
+        src = simple_div(src, ten);
+        src.cexp--;
+    }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, src.sign);
     set_cexp(&result, src.cexp);
