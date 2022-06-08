@@ -388,18 +388,6 @@ int main() {
     tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fftd_fdtf);
 
 
-    // s21_decimal temp = { 10000, 0, 0, 0x80040000 };
-    // float result;
-    // s21_from_decimal_to_float(temp, &result);
-    // print_decimal(temp);
-    // printf("%f", result);
-
-    // s21_decimal r;
-    // s21_from_float_to_decimal(-65.125, &r);
-    // printf("%f\n", -65.125);
-    // print_decimal(r);
-
-
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);
     return 0;

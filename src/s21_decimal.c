@@ -524,6 +524,16 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
     return 0;
 }
 
+// В int
+int s21_from_decimal_to_int(s21_decimal src, int *dst) {
+    s21_decimal div10 = { 10, 0, 0, 0 };
+    unsigned cexp = get_cexp(src);
+    while(cexp--) {
+        s21_div(src, div10, &src);
+    }
+    print_decimal(div10);
+}
+
 // Преобразовывает во float
 int s21_from_decimal_to_float(s21_decimal src, float *dst) {
     // проверки на максимум???
@@ -555,4 +565,11 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
         set_sign(result, 1);
     }
     return 0;
+}
+
+int main() {
+    int result;
+    s21_decimal op = {10000, 0, 0, 0x00030000 };
+    print_decimal(op);
+    s21_from_decimal_to_int(op, &result);
 }
