@@ -1,9 +1,11 @@
 #include "s21_decimal.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define CEXP 0x00FF0000
-#define SIGN 0x80000000
+#define CEXP 0x00FF0000U
+#define SIGN 0x80000000U
 
 typedef struct {
     unsigned bits[6];
@@ -59,8 +61,8 @@ void print_big_decimal(big_decimal op) {
 
 // Печатает s21_decimal
 void print_decimal(s21_decimal op) {
-    printf("[%s] %x %x %x (%x)\n", op.bits[3], op.bits[2], op.bits[1],
-           op.bits[0]);
+    big_decimal b_op = to_big_decimal(op);
+    printf("[%s] %08x %08x %08x (%x)\n", b_op.sign ? "-" : "+", b_op.bits[2], b_op.bits[1], b_op.bits[0], b_op.cexp);
 }
 
 // Увеличивает коэффициент масштабирования на 1, увеличивает мантиссу на 10
@@ -231,7 +233,7 @@ big_decimal shift_bit_right(big_decimal src) {
     return dst;
 }
 
-// Перемножает два big_decimal ьез учета знака
+// Перемножает два big_decimal без учета знака
 big_decimal big_decimal_mul(s21_decimal value_1, s21_decimal value_2) {
     big_decimal big_op1 = to_big_decimal(value_1);
     big_decimal big_op2 = to_big_decimal(value_2);
@@ -483,6 +485,61 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
     return 0;
 }
 
+// Из float
+#define MAX_DECIMAL  79228162514264337593543950335.f
+#define MIN_DECIMAL -79228162514264337593543950335.f
+#define FLOAT2DECIMAL_MASK "%+49.28f"
+#define FLOAT_STR_LEN 50
+
+int s21_from_float_to_decimal(float src, s21_decimal *dst) {
+    // проверка на максимальный decimal
+    memset(dst, 0, sizeof(s21_decimal));
+    char *float_str = malloc(FLOAT_STR_LEN);
+    sprintf(float_str, FLOAT2DECIMAL_MASK, src);
+    int i = FLOAT_STR_LEN - 1;
+    for (; i > 0 && float_str[i] == '0'; i--) {}
+    float_str[i + 1] = 0;
+
+    printf("%s", float_str);
+    //
+
+
+    // union {
+    //     float number;
+    //     unsigned char  bytes[4];
+    // } converter;
+    // converter.number = src;
+
+
+
+    // printf("%e = %hhx %hhx %hhx %hhx\n", converter.number, converter.bytes[3], converter.bytes[2], converter.bytes[1], converter.bytes[0]);
+
+    // int sign = converter.bytes[3] >> 7;
+    // unsigned char exp = (converter.bytes[3] << 1) + (converter.bytes[2] >> 7) - 0x7f;
+    // unsigned int mantissa = ((converter.bytes[2] & 0x7f) << 16) + (converter.bytes[1] << 8) + converter.bytes[0];
+    // printf("%e = [%hhx] %x E %hhx", converter.number, sign, mantissa, exp);
+}
+
+
+int s21_from_decimal_to_float(s21_decimal src, float *dst) {
+    // проверки на максимум???
+    float result = 0;
+    for (int nb = 2; nb >= 0; nb--) {
+        for (int i = 31; i >= 0; i--) {
+            result *= 2;
+            if (src.bits[nb] & (1 << i)) {
+                result += 1;
+            }
+        }
+    }
+    unsigned cexp = get_cexp(src);
+    while (cexp--) {
+        result /= 10;
+    }
+    *dst = (get_sign(src)) ? -result : result;
+    return 0;
+}
+
 // Другие функции
 
 // Возвращает результат умножения указанного Decimal на -1.
@@ -494,4 +551,15 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
         set_sign(result, 1);
     }
     return 0;
+}
+
+int main() {
+    // s21_decimal temp = { 10000, 0, 0, 0x80040000 };
+    // float result;
+    // s21_from_decimal_to_float(temp, &result);
+    // print_decimal(temp);
+    // printf("%f", result);
+
+    s21_decimal r;
+    s21_from_float_to_decimal(MIN_DECIMAL, &r);
 }
