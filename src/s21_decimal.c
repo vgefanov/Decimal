@@ -62,8 +62,9 @@ void print_big_decimal(big_decimal op) {
 
 // Печатает s21_decimal
 void print_decimal(s21_decimal op) {
-    big_decimal b_op = to_big_decimal(op);
-    printf("[%s] %08x %08x %08x (%x)\n", b_op.sign ? "-" : "+", b_op.bits[2], b_op.bits[1], b_op.bits[0], b_op.cexp);
+  big_decimal b_op = to_big_decimal(op);
+  printf("[%s] %08x %08x %08x (%x)\n", b_op.sign ? "-" : "+", b_op.bits[2],
+         b_op.bits[1], b_op.bits[0], b_op.cexp);
 }
 
 // Увеличивает коэффициент масштабирования на 1, увеличивает мантиссу на 10
@@ -444,12 +445,25 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
 
 // Умножение *
 int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  int sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 1;
+  set_sign(&value_1, 0);
+  set_sign(&value_2, 0);
+  if ((sign1 && sign2) || (!sign1 && !sign2)) {
+    sign_res = 0;
+  }
   big_decimal res_big = big_decimal_mul(value_1, value_2);
   *result = big_decimal_to_decimal(res_big);
+  set_sign(result, sign_res);
 }
 
 // Деление /
 int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  int sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 1;
+  set_sign(&value_1, 0);
+  set_sign(&value_2, 0);
+  if ((sign1 && sign2) || (!sign1 && !sign2)) {
+    sign_res = 0;
+  }
   big_decimal value_1_big_decimal = to_big_decimal(value_1);
   big_decimal value_2_big_decimal = to_big_decimal(value_2);
   if (value_1_big_decimal.cexp > value_2_big_decimal.cexp) {
@@ -477,6 +491,38 @@ int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
   }
   dst_big_decimal.cexp = cexp;
   *result = big_decimal_to_decimal(dst_big_decimal);
+  set_sign(result, sign_res);
+}
+
+// Остаток от деления Mod
+int s21_mod(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+  int sign = get_sign(value_1);
+  int dst_exp = 0;
+  dst_exp = get_cexp(value_1) >= get_cexp(value_2) ? get_cexp(value_1)
+                                                   : get_cexp(value_2);
+  set_sign(&value_1, 0);
+  set_sign(&value_2, 0);
+  if (s21_is_greater(value_1, value_2)) {
+    big_decimal value_1_big_decimal = to_big_decimal(value_1);
+    big_decimal value_2_big_decimal = to_big_decimal(value_2);
+    if (value_1_big_decimal.cexp > value_2_big_decimal.cexp) {
+      value_2_big_decimal = normalize_big_decimal(
+          value_2_big_decimal,
+          value_1_big_decimal.cexp - value_2_big_decimal.cexp);
+    }
+    if (value_2_big_decimal.cexp > value_1_big_decimal.cexp) {
+      value_1_big_decimal = normalize_big_decimal(
+          value_1_big_decimal,
+          value_2_big_decimal.cexp - value_1_big_decimal.cexp);
+    }
+    value_1_big_decimal = simple_mod(value_1_big_decimal, value_2_big_decimal);
+    value_1 = big_decimal_to_decimal(value_1_big_decimal);
+  } else {
+    dst_exp = get_cexp(value_1);
+  }
+  set_cexp(&value_1, dst_exp);
+  set_sign(&value_1, sign);
+  *result = value_1;
 }
 
 // Операторы сравнения
@@ -547,90 +593,90 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
 }
 
 // Преобразовывает из float
-#define MAX_DECIMAL  79228162514264337593543950335.f
+#define MAX_DECIMAL 79228162514264337593543950335.f
 #define MIN_DECIMAL -79228162514264337593543950335.f
 #define FLOAT2DECIMAL_MASK "%+.28f"
 #define FLOAT_STR_LEN 50
 
 int s21_from_float_to_decimal(float src, s21_decimal *dst) {
-    // проверка на максимальный decimal??
-    big_decimal result = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    char *float_str = malloc(FLOAT_STR_LEN);
-    sprintf(float_str, FLOAT2DECIMAL_MASK, src);
-    int end_pos = strlen(float_str) - 1;
-    while (float_str[end_pos] == '0') {
-        float_str[end_pos] = 0;
-        end_pos--;
+  // проверка на максимальный decimal??
+  big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
+  char *float_str = malloc(FLOAT_STR_LEN);
+  sprintf(float_str, FLOAT2DECIMAL_MASK, src);
+  int end_pos = strlen(float_str) - 1;
+  while (float_str[end_pos] == '0') {
+    float_str[end_pos] = 0;
+    end_pos--;
+  }
+  // формируем целочисленное представление
+  bool after_dot = FALSE;
+  int cexp = 0;
+  for (int pos = 1; float_str[pos]; pos++) {
+    if (float_str[pos] == '.') {
+      after_dot = TRUE;
+    } else {
+      result = scale_big_decimal(result);
+      result.bits[0] += (float_str[pos] - '0');
+      if (after_dot) {
+        cexp++;
+      }
     }
-    // формируем целочисленное представление
-    bool after_dot = FALSE;
-    int  cexp = 0;
-    for (int pos = 1; float_str[pos]; pos++) {
-        if (float_str[pos] == '.') {
-            after_dot = TRUE;
-        } else {
-            result = scale_big_decimal(result);
-            result.bits[0] += (float_str[pos] - '0');
-            if (after_dot) {
-                cexp++;
-            }
-        }
-    }
-    // расставляем степень и экспоненту
-    result.cexp = cexp;
-    if (float_str[0] == '-') {
-        result.sign = 1;
-    }
-    *dst = big_decimal_to_decimal(result);
-    return 0;
+  }
+  // расставляем степень и экспоненту
+  result.cexp = cexp;
+  if (float_str[0] == '-') {
+    result.sign = 1;
+  }
+  *dst = big_decimal_to_decimal(result);
+  return 0;
 }
 
 // В int
 int s21_from_decimal_to_int(s21_decimal src, int *dst) {
-    s21_decimal div10 = { 10, 0, 0, 0 };
-    unsigned cexp = get_cexp(src);
-    while(cexp--) {
-        s21_div(src, div10, &src);
-    }
-    print_decimal(div10);
+  s21_decimal div10 = {10, 0, 0, 0};
+  unsigned cexp = get_cexp(src);
+  while (cexp--) {
+    s21_div(src, div10, &src);
+  }
+  print_decimal(div10);
 }
 
 // Преобразовывает во float
 int s21_from_decimal_to_float(s21_decimal src, float *dst) {
-    // проверки на максимум???
-    float result = 0;
-    for (int nb = 2; nb >= 0; nb--) {
-        for (int i = 31; i >= 0; i--) {
-            result *= 2;
-            if (src.bits[nb] & (1 << i)) {
-                result += 1;
-            }
-        }
+  // проверки на максимум???
+  float result = 0;
+  for (int nb = 2; nb >= 0; nb--) {
+    for (int i = 31; i >= 0; i--) {
+      result *= 2;
+      if (src.bits[nb] & (1 << i)) {
+        result += 1;
+      }
     }
-    unsigned cexp = get_cexp(src);
-    while (cexp--) {
-        result /= 10;
-    }
-    *dst = (get_sign(src)) ? -result : result;
-    return 0;
+  }
+  unsigned cexp = get_cexp(src);
+  while (cexp--) {
+    result /= 10;
+  }
+  *dst = (get_sign(src)) ? -result : result;
+  return 0;
 }
 
 // Другие функции
 
 // Возвращает результат умножения указанного Decimal на -1.
 int s21_negate(s21_decimal value, s21_decimal *result) {
-    *result = value;
-    if (get_sign(value)) {
-        set_sign(result, 0);
-    } else {
-        set_sign(result, 1);
-    }
-    return 0;
+  *result = value;
+  if (get_sign(value)) {
+    set_sign(result, 0);
+  } else {
+    set_sign(result, 1);
+  }
+  return 0;
 }
 
-int main() {
-    int result;
-    s21_decimal op = {10000, 0, 0, 0x00030000 };
-    print_decimal(op);
-    s21_from_decimal_to_int(op, &result);
-}
+// int main() {
+//     int result;
+//     s21_decimal op = {10000, 0, 0, 0x00030000 };
+//     print_decimal(op);
+//     s21_from_decimal_to_int(op, &result);
+// }

@@ -3,14 +3,14 @@
 #include <check.h>
 
 typedef struct {
-    s21_decimal op1;
-    float       op2;
+  s21_decimal op1;
+  float op2;
 } test_struct_df;
 
 typedef struct {
-    s21_decimal op1;
-    s21_decimal op2;
-    s21_decimal wait;
+  s21_decimal op1;
+  s21_decimal op2;
+  s21_decimal wait;
 } test_struct_ddd;
 
 typedef struct {
@@ -130,6 +130,10 @@ test_struct_ddd test_pack_div[] = {
      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000001, 0x00000000, 0x00000000, 0x00000000}},
 
+    {{0x000186A0, 0x00000000, 0x00000000, 0x00000000},
+     {0x0000000a, 0x00000000, 0x00000000, 0x00000000},
+     {0x00002710, 0x00000000, 0x00000000, 0x00000000}},
+
     {{0x00000004, 0x00000000, 0x00000000, 0x00000000},
      {0x00000002, 0x00000000, 0x00000000, 0x00000000},
      {0x00000002, 0x00000000, 0x00000000, 0x00000000}},
@@ -152,6 +156,26 @@ START_TEST(test_div) {
   s21_decimal result;
   s21_div(test_pack_div[_i].op1, test_pack_div[_i].op2, &result);
   ck_assert_mem_eq(&result, &test_pack_div[_i].wait, sizeof(s21_decimal));
+}
+END_TEST
+
+// s21_mod
+
+test_struct_ddd test_pack_mod[] = {
+    {{0x00000011, 0x00000000, 0x00000000, 0x00010000},
+     {0x00000007, 0x00000000, 0x00000000, 0x00010000},
+     {0x00000003, 0x00000000, 0x00000000, 0x00010000}},
+
+    {{0x00002810, 0x00000000, 0x00000000, 0x00030000},
+     {0x0000000b, 0x00000000, 0x00000000, 0x00010000},
+     {0x00000164, 0x00000000, 0x00000000, 0x00030000}},
+
+};
+
+START_TEST(test_mod) {
+  s21_decimal result;
+  s21_mod(test_pack_mod[_i].op1, test_pack_mod[_i].op2, &result);
+  ck_assert_mem_eq(&result, &test_pack_mod[_i].wait, sizeof(s21_decimal));
 }
 END_TEST
 
@@ -367,93 +391,94 @@ START_TEST(test_not_equal) {
 }
 END_TEST
 
-
 // s21_from_float_to_decimal
 // s21_from_decimal_to_float
 
 test_struct_df test_pack_fftd_fdtf[] = {
     {
-        { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000},
+        {0x0000fe65, 0x00000000, 0x00000000, 0x80030000},
         -65.125,
     },
 };
 
 START_TEST(test_fftd) {
-    s21_decimal result;
-    s21_from_float_to_decimal(test_pack_fftd_fdtf[_i].op2, &result);
-    ck_assert_mem_eq(&result, &test_pack_fftd_fdtf[_i].op1, sizeof(s21_decimal));
+  s21_decimal result;
+  s21_from_float_to_decimal(test_pack_fftd_fdtf[_i].op2, &result);
+  ck_assert_mem_eq(&result, &test_pack_fftd_fdtf[_i].op1, sizeof(s21_decimal));
 }
 END_TEST
 
 START_TEST(test_fdtf) {
-    float result;
-    s21_from_decimal_to_float(test_pack_fftd_fdtf[_i].op1, &result);
-    ck_assert_float_eq(result, test_pack_fftd_fdtf[_i].op2);
+  float result;
+  s21_from_decimal_to_float(test_pack_fftd_fdtf[_i].op1, &result);
+  ck_assert_float_eq(result, test_pack_fftd_fdtf[_i].op2);
 }
 END_TEST
 
 // main
 
 int main() {
-    Suite *s = suite_create("s21_decimal test");
-    SRunner *sr = srunner_create(s);
-    srunner_set_fork_status(sr, CK_NOFORK);
-    TCase *tc = tcase_create("s21_decimal case");
-    suite_add_tcase(s, tc);
-    tcase_set_timeout(tc, 10);
+  Suite *s = suite_create("s21_decimal test");
+  SRunner *sr = srunner_create(s);
+  srunner_set_fork_status(sr, CK_NOFORK);
+  TCase *tc = tcase_create("s21_decimal case");
+  suite_add_tcase(s, tc);
+  tcase_set_timeout(tc, 10);
 
-    int test_pack_size = sizeof(test_pack_add) / sizeof(test_struct_ddd);
-    tcase_add_loop_test(tc, test_add, 0, test_pack_size);
+  int test_pack_size = sizeof(test_pack_add) / sizeof(test_struct_ddd);
+  tcase_add_loop_test(tc, test_add, 0, test_pack_size);
 
-    test_pack_size = sizeof(test_pack_sub) / sizeof(test_struct_ddd);
-    tcase_add_loop_test(tc, test_sub, 0, test_pack_size);
+  test_pack_size = sizeof(test_pack_sub) / sizeof(test_struct_ddd);
+  tcase_add_loop_test(tc, test_sub, 0, test_pack_size);
 
-    test_pack_size = sizeof(test_pack_mul) / sizeof(test_struct_ddd);
-    tcase_add_loop_test(tc, test_mul, 0, test_pack_size);
+  test_pack_size = sizeof(test_pack_mul) / sizeof(test_struct_ddd);
+  tcase_add_loop_test(tc, test_mul, 0, test_pack_size);
 
-    test_pack_size = sizeof(test_pack_div) / sizeof(test_struct_ddd);
-    tcase_add_loop_test(tc, test_div, 0, test_pack_size);
+  test_pack_size = sizeof(test_pack_div) / sizeof(test_struct_ddd);
+  tcase_add_loop_test(tc, test_div, 0, test_pack_size);
 
-    // Меньше <
-    int test_pack_size_less =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_less, 0, test_pack_size_less);
+  test_pack_size = sizeof(test_pack_mod) / sizeof(test_struct_ddd);
+  tcase_add_loop_test(tc, test_mod, 0, test_pack_size);
 
-    // Меньше или равно <=
-    int test_pack_size_less_or_equal =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_less_or_equal, 0,
-                        test_pack_size_less_or_equal);
+  // Меньше <
+  int test_pack_size_less =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_less, 0, test_pack_size_less);
 
-    // Больше >
-    int test_pack_size_greater =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_greater, 0, test_pack_size_greater);
+  // Меньше или равно <=
+  int test_pack_size_less_or_equal =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_less_or_equal, 0, test_pack_size_less_or_equal);
 
-    // Больше или равно >=
-    int test_pack_size_greater_or_equal =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_greater_or_equal, 0,
-                        test_pack_size_greater_or_equal);
+  // Больше >
+  int test_pack_size_greater =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_greater, 0, test_pack_size_greater);
 
-    // Равно ==
-    int test_pack_size_equal =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_equal, 0, test_pack_size_equal);
+  // Больше или равно >=
+  int test_pack_size_greater_or_equal =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_greater_or_equal, 0,
+                      test_pack_size_greater_or_equal);
 
-    // Не равно !=
-    int test_pack_size_not_equal =
-        sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
-    tcase_add_loop_test(tc, test_not_equal, 0, test_pack_size_not_equal);
+  // Равно ==
+  int test_pack_size_equal =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_equal, 0, test_pack_size_equal);
 
-    // s21_from_float_to_decimal
-    // s21_from_decimal_to_float
-    int test_pack_size_fftd_fdtf = sizeof(test_pack_fftd_fdtf) / sizeof(test_struct_df);
-    tcase_add_loop_test(tc, test_fftd, 0, test_pack_size_fftd_fdtf);
-    tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fftd_fdtf);
+  // Не равно !=
+  int test_pack_size_not_equal =
+      sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
+  tcase_add_loop_test(tc, test_not_equal, 0, test_pack_size_not_equal);
 
+  // s21_from_float_to_decimal
+  // s21_from_decimal_to_float
+  int test_pack_size_fftd_fdtf =
+      sizeof(test_pack_fftd_fdtf) / sizeof(test_struct_df);
+  tcase_add_loop_test(tc, test_fftd, 0, test_pack_size_fftd_fdtf);
+  tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fftd_fdtf);
 
-    srunner_run_all(sr, CK_ENV);
-    srunner_free(sr);
-    return 0;
+  srunner_run_all(sr, CK_ENV);
+  srunner_free(sr);
+  return 0;
 }
