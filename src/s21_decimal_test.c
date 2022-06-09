@@ -411,10 +411,12 @@ END_TEST
 // s21_from_float_to_decimal
 // s21_from_decimal_to_float
 
+
 test_struct_df test_pack_fftd_fdtf[] = {
-    {
-        { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000}, -65.125,
-    },
+    { { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000 }, -65.125 },
+    // s21_from_float_to_decimal_1
+    {{ 3, 0, 0, 0x00020000}, 0.03F },
+    {{ 1271234, 0, 0, 0x00040000}, 127.1234F },
 };
 
 START_TEST(test_fftd) {
