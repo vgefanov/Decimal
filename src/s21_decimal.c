@@ -612,7 +612,7 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
     if (src == -INFINITY) {
         result.sign = 1;
     }
-    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY ) {
+    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY || src < 1e-28) {
         result_code = RESULT_ERROR;
     } else {
         char float_str[FLOAT_STR_LEN];
