@@ -267,7 +267,6 @@ test_struct_ddd test_pack_mod[] = {
      {0x0000000b, 0x00000000, 0x00000000, 0x00010000},
      {0x00000164, 0x00000000, 0x00000000, 0x00030000},
      RESULT_SUCCESS},
-
 };
 
 START_TEST(test_mod) {
@@ -558,6 +557,7 @@ END_TEST
 test_struct_dd test_pack_floor[] = {
     {{0x0000000f, 0x00000000, 0x00000000, 0x00010000}, {0x00000001, 0x00000000, 0x00000000, 0x00000000}},
     {{0x0000000f, 0x00000000, 0x00000000, 0x80010000}, {0x00000002, 0x00000000, 0x00000000, 0x80000000}},
+    {{0x000000ff, 0x00000000, 0x00000000, 0x80000000}, {0x000000ff, 0x00000000, 0x00000000, 0x80000000}},
 };
 
 START_TEST(test_floor) {
@@ -687,7 +687,7 @@ int main() {
     tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fdtf);
 
     // floor
-    test_pack_size = sizeof(test_pack_floor) / sizeof(test_struct_ddd);
+    test_pack_size = sizeof(test_pack_floor) / sizeof(test_struct_dd);
     tcase_add_loop_test(tc, test_floor, 0, test_pack_size);
 
     // round

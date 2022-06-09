@@ -62,7 +62,7 @@ s21_decimal big_decimal_to_decimal(big_decimal src, int *err_code) {
     big_decimal one = {1, 0, 0, 0, 0, 0, 0, 0};
     unsigned cexp = src.cexp;
     unsigned sign = src.sign;
-    int tmp_out;
+    int tmp_out = 0;
     bool full = FALSE;
     while (((src.bits[3] || src.bits[4] || src.bits[5]) && cexp) || cexp > 28) {
         full = TRUE;
@@ -673,7 +673,7 @@ int s21_from_decimal_to_float(s21_decimal src, float *dst) {
     for (int nb = 2; nb >= 0; nb--) {
         for (int i = 31; i >= 0; i--) {
             result *= 2;
-            if (src.bits[nb] & (1 << i)) {
+            if (src.bits[nb] & ((unsigned)1 << i)) {
                 result += 1;
             }
         }

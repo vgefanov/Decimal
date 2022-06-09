@@ -12,7 +12,7 @@ BUILD_DIR = .
 OUTFILE_TEST = s21_decimal_test
 
 
-all: clean s21_decimal.a test
+all: s21_decimal.a test
 
 clean:
 	rm -rf ./lcov_report
@@ -53,6 +53,8 @@ leaks: test
 
 # service
 
+debug:
+	$(CC) $(CFLAGS_TEST) -g $(SOURCES) $(SOURCES_TEST) -o $(BUILD_DIR)/$(OUTFILE_TEST)
 
 brew:
 	# cd ~/goinfre
@@ -70,4 +72,4 @@ valgrind_install:
 
 
 valgrind:
-	valgrind $(OUTFILE_TEST) --leak-check=full
+	valgrind ./$(OUTFILE_TEST) --leak-check=full
