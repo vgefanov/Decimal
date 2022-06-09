@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS =-Wall -Wextra -Werror -std=c11 -lm
+CFLAGS =-Wall -Wno-missing-braces -Wextra -Werror -std=c11 -lm
 CFLAGS_GCOV =-fprofile-arcs -ftest-coverage
-CFLAGS_TEST =-Wall -Wextra -Werror -std=c11 -lm -lcheck -lpthread
+CFLAGS_TEST =-Wall -Wno-missing-braces -Wextra -Werror -std=c11 -lm -lcheck -lpthread
 
 
 SOURCES = s21_decimal.c
@@ -12,7 +12,7 @@ BUILD_DIR = .
 OUTFILE_TEST = s21_decimal_test
 
 
-all: s21_string.a
+all: s21_decimal.a
 
 
 clean:

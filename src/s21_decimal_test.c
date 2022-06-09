@@ -40,57 +40,66 @@ typedef struct {
 // s21_add
 
 test_struct_ddd test_pack_add[] = {
-    // 1 + 1 = 2
-    { {0x82e25aed, 0xf9e825ad, 0xb03ef094, 0x800e0000},
-      {0x481b1f98, 0xfbfd896d, 0x00046d77, 0x80220000},
-      {0xb629b5da, 0xf9ea0c7f, 0xb03ef094, 0x800e0000},
-      RESULT_SUCCESS },
+    {{0x82e25aed, 0xf9e825ad, 0xb03ef094, 0x800e0000},
+     {0x481b1f98, 0xfbfd896d, 0x00046d77, 0x80180000},
+     {0xb629b5da, 0xf9ea0c7f, 0xb03ef094, 0x800e0000},
+     RESULT_SUCCESS},
 
-    { {0x00000001, 0x00000000, 0x00000000, 0x00000000},
-      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
-      {0x00000002, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+    {{0xffffffff, 0xffffffff, 0xffffffff, 0x80000000},
+     {0x000001, 0x000000, 0x000000, 0x80000000},
+     {0x000000, 0x000000, 0x000000, 0x000000},
+     MINLIMIT_ERROR},
 
     // src1 = 79228162514264337593543950335;
     // src2 = -1;
-    { {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000},
-      {0x00000001, 0x00000000, 0x00000000, 0x80000000},
-      {0xfffffffe, 0xffffffff, 0xffffffff, 0x00000000},
-      RESULT_SUCCESS },
+    {{0xffffffff, 0xffffffff, 0xffffffff, 0x00000000},
+     {0x00000001, 0x00000000, 0x00000000, 0x80000000},
+     {0xfffffffe, 0xffffffff, 0xffffffff, 0x00000000},
+     RESULT_SUCCESS},
 
-    // {{0x00000555, 0x00000000, 0x00000000, 0x80000000},
-    //  {0x00099999, 0x00000000, 0x00000000, 0x80000000},
-    //  {0x00099EEE, 0x00000000, 0x00000000, 0x80000000}},
+    {{0x00000555, 0x00000000, 0x00000000, 0x80000000},
+     {0x00099999, 0x00000000, 0x00000000, 0x80000000},
+     {0x00099EEE, 0x00000000, 0x00000000, 0x80000000},
+     RESULT_SUCCESS},
 
-    // {{0xAAAAAAAA, 0x00000000, 0x00000000, 0x00000000},
-    //  {0x00999999, 0x00000000, 0x00000000, 0x00000000},
-    //  {0xAB444443, 0x00000000, 0x00000000, 0x00000000}},
+    {{0xAAAAAAAA, 0x00000000, 0x00000000, 0x00000000},
+     {0x00999999, 0x00000000, 0x00000000, 0x00000000},
+     {0xAB444443, 0x00000000, 0x00000000, 0x00000000},
+     RESULT_SUCCESS},
 
-    // {{0x00000010, 0x00000000, 0x00000000, 0x00000000},
-    //  {0x00000010, 0x00000000, 0x00000000, 0x00000000},
-    //  {0x00000020, 0x00000000, 0x00000000, 0x00000000}},
+    {{0x00000010, 0x00000000, 0x00000000, 0x00000000},
+     {0x00000010, 0x00000000, 0x00000000, 0x00000000},
+     {0x00000020, 0x00000000, 0x00000000, 0x00000000},
+     RESULT_SUCCESS},
 
-    // {{0x7f7f7f7f, 0x00007f7f, 0x00000000, 0x00040000},
-    //  {0x7f7f7f7f, 0x007f7f7f, 0x00000000, 0x00040000},
-    //  {0xfefefefe, 0x007ffefe, 0x00000000, 0x00040000}},
+    {{0x7f7f7f7f, 0x00007f7f, 0x00000000, 0x00040000},
+     {0x7f7f7f7f, 0x007f7f7f, 0x00000000, 0x00040000},
+     {0xfefefefe, 0x007ffefe, 0x00000000, 0x00040000},
+     RESULT_SUCCESS},
 
-    // {{0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
-    //  {0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
-    //  {0xfffffffe, 0xffffffff, 0x00000001, 0x00000000}},
+    {{0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
+     {0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
+     {0xfffffffe, 0xffffffff, 0x00000001, 0x00000000},
+     RESULT_SUCCESS},
 
-    // {{0x7f7f7f7f, 0x00007f7f, 0x00000000, 0x00000000},
-    //  {0x7f7f7f7f, 0x007f7f7f, 0x00000000, 0x80000000},
-    //  {0x00000000, 0x007f0000, 0x00000000, 0x80000000}},
+    {{0x7f7f7f7f, 0x00007f7f, 0x00000000, 0x00000000},
+     {0x7f7f7f7f, 0x007f7f7f, 0x00000000, 0x80000000},
+     {0x00000000, 0x007f0000, 0x00000000, 0x80000000},
+     RESULT_SUCCESS},
 
-    // {{0xffffffff, 0xffffffff, 0xffffffff, 0x80000000},
-    //  {0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
-    //  {0x00000000, 0x00000000, 0xffffffff, 0x80000000}},
+    {{0xffffffff, 0xffffffff, 0xffffffff, 0x80000000},
+     {0xffffffff, 0xffffffff, 0x00000000, 0x00000000},
+     {0x00000000, 0x00000000, 0xffffffff, 0x80000000},
+     RESULT_SUCCESS},
 };
 
 START_TEST(test_add) {
     s21_decimal result;
-    s21_add(test_pack_add[_i].op1, test_pack_add[_i].op2, &result);
-    ck_assert_mem_eq(&result, &test_pack_add[_i].wait, sizeof(s21_decimal));
+    int result_code = s21_add(test_pack_add[_i].op1, test_pack_add[_i].op2, &result);
+    ck_assert_int_eq(result_code, test_pack_add[_i].result_code);
+    if (result_code == RESULT_SUCCESS) {
+        ck_assert_mem_eq(&result, &test_pack_add[_i].wait, sizeof(s21_decimal));
+    }
 }
 END_TEST
 
@@ -98,25 +107,25 @@ END_TEST
 
 test_struct_ddd test_pack_sub[] = {
     // 1 + 1 = 2
-    { {0x00000008, 0x00000000, 0x00000000, 0x00000000},
-      {0x00000003, 0x00000000, 0x00000000, 0x00000000},
-      {0x00000005, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+    {{0x00000008, 0x00000000, 0x00000000, 0x00000000},
+     {0x00000003, 0x00000000, 0x00000000, 0x00000000},
+     {0x00000005, 0x00000000, 0x00000000, 0x00000000},
+     RESULT_SUCCESS},
 
     {{0x00000fff, 0x00000000, 0x00000000, 0x00000000},
      {0x00000794, 0x00000000, 0x00000000, 0x00000000},
      {0x0000086b, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0xffffffff, 0xffffffff, 0x00ffffff, 0x80000000},
      {0x87654234, 0x00000567, 0x00000000, 0x00000000},
      {0x87654233, 0x00000567, 0x01000000, 0x80000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0xffffffff, 0xffffffff, 0x00ffffff, 0x00000000},
      {0x87654234, 0x00000567, 0x00000000, 0x00000000},
      {0x789abdcb, 0xfffffa98, 0x00ffffff, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 };
 
 START_TEST(test_sub) {
@@ -129,25 +138,30 @@ END_TEST
 // s21_mul
 
 test_struct_ddd test_pack_mul[] = {
+    {{0x0000000a, 0x00000000, 0x0000000a, 0x00010000},
+     {0x02433305, 0x9701bb81, 0x1c529ce7, 0x00050000},
+     {0x00000000, 0x00000000, 0x00000000, 0x00000000},
+     MAXLIMIT_ERROR},
+
     {{0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x00000002, 0x00000000, 0x00000000, 0x00000000},
      {0x00000002, 0x00000000, 0x00000000, 0x00000000},
      {0x00000004, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0xffffffff, 0x00000000, 0x00000000, 0x00030000},
      {0xcccc1234, 0xaaaaaabb, 0x00000000, 0x00080000},
      {0x3333edcc, 0x22216778, 0xaaaaaabb, 0x000b0000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x00000000, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 };
 
 START_TEST(test_mul) {
@@ -163,42 +177,42 @@ test_struct_ddd test_pack_div[] = {
     {{0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000001, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x000186A0, 0x00000000, 0x00000000, 0x00000000},
      {0x0000000a, 0x00000000, 0x00000000, 0x00000000},
      {0x00002710, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x00000004, 0x00000000, 0x00000000, 0x00000000},
      {0x00000002, 0x00000000, 0x00000000, 0x00000000},
      {0x00000002, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x3333edcc, 0x22216778, 0xaaaaaabb, 0x00000000},
      {0xffffffff, 0x00000000, 0x00000000, 0x00000000},
      {0xcccc1234, 0xaaaaaabb, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x499602D2, 0x00000000, 0x00000000, 0x00000000},
      {0x00000005, 0x00000000, 0x00000000, 0x00000000},
      {0x0eb79a2a, 0x00000000, 0x00000000, 0x00000000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x00000369, 0x00000000, 0x00000000, 0x00020000},
      {0x00000003, 0x00000000, 0x00000000, 0x00000000},
      {0x00000123, 0x00000000, 0x00000000, 0x00020000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
     // 1 / 0
     {{0x00000001, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
-      DIVBYZERO_ERROR },
+     DIVBYZERO_ERROR},
     // 0 / 0
     {{0x00000000, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
      {0x00000000, 0x00000000, 0x00000000, 0x00000000},
-      DIVBYZERO_ERROR },
+     DIVBYZERO_ERROR},
 };
 
 START_TEST(test_div) {
@@ -217,13 +231,12 @@ test_struct_ddd test_pack_mod[] = {
     {{0x00000011, 0x00000000, 0x00000000, 0x00010000},
      {0x00000007, 0x00000000, 0x00000000, 0x00010000},
      {0x00000003, 0x00000000, 0x00000000, 0x00010000},
-      RESULT_SUCCESS },
+     RESULT_SUCCESS},
 
     {{0x00002810, 0x00000000, 0x00000000, 0x00030000},
      {0x0000000b, 0x00000000, 0x00000000, 0x00010000},
      {0x00000164, 0x00000000, 0x00000000, 0x00030000},
-      RESULT_SUCCESS },
-
+     RESULT_SUCCESS},
 };
 
 START_TEST(test_mod) {
@@ -442,13 +455,12 @@ END_TEST
 // s21_from_decimal_to_int
 
 test_struct_di test_pack_fdti[] = {
-    { { 10000, 0x00000000, 0x00000000, 0x00000000 }, 10000},
-    { { INT_MAX, 0x00000000, 0x00000000, 0x00000000 }, INT_MAX },
-    { {(unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x80000000}, INT_MIN },
-    { { (unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x00000000}, 0 },
-    { { (unsigned)INT_MAX + 2, 0x00000000, 0x00000000, 0x80000000}, 0 },
-    { { 0x173c1c7, 0, 0, 0x80070000 }, -2 },
-
+    {{10000, 0x00000000, 0x00000000, 0x00000000}, 10000},
+    {{INT_MAX, 0x00000000, 0x00000000, 0x00000000}, INT_MAX},
+    {{(unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x80000000}, INT_MIN},
+    {{(unsigned)INT_MAX + 1, 0x00000000, 0x00000000, 0x00000000}, 0},
+    {{(unsigned)INT_MAX + 2, 0x00000000, 0x00000000, 0x80000000}, 0},
+    {{0x173c1c7, 0, 0, 0x80070000}, -2},
 };
 
 START_TEST(test_fdti) {
@@ -461,18 +473,12 @@ END_TEST
 // s21_from_float_to_decimal
 
 test_struct_df test_pack_fftd[] = {
-    { { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000 }, -65.125, RESULT_SUCCESS },
-    // s21_from_float_to_decimal_1
-    { { 3, 0, 0, 0x00020000 }, 0.03F, RESULT_SUCCESS },
-    { { 1271234, 0, 0, 0x00040000 }, 127.1234F, RESULT_SUCCESS },
-    // s21_from_float_to_decimal_3
-    { { 1020000000, 0, 0, 0 }, 1.02E+09F, RESULT_SUCCESS },
-    // s21_from_float_to_decimal_4
-    { { 0, 0, 0, 0 }, 1.0F / 0.0F, RESULT_ERROR },
-    // s21_from_float_to_decimal_5
-    { { 0, 0, 0, 0 }, -1.0F / 0.0F, RESULT_ERROR },
-    // s21_from_float_to_decimal_6
-    { { 0, 0, 0, 0 }, NAN, RESULT_ERROR },
+    {{3, 0, 0, 0x00020000}, 0.03F, RESULT_SUCCESS},
+    {{1271234, 0, 0, 0x00040000}, 127.1234F, RESULT_SUCCESS},
+    {{1020000000, 0, 0, 0}, 1.02E+09F, RESULT_SUCCESS},
+    {{0, 0, 0, 0}, 1.0F / 0.0F, RESULT_ERROR},
+    {{0, 0, 0, 0}, -1.0F / 0.0F, RESULT_ERROR},
+    {{0, 0, 0, 0}, NAN, RESULT_ERROR},
 };
 
 START_TEST(test_fftd) {
@@ -488,12 +494,10 @@ END_TEST
 // s21_from_decimal_to_float
 
 test_struct_df test_pack_fdtf[] = {
-    { { 0x0000fe65, 0x00000000, 0x00000000, 0x80030000 }, -65.125, RESULT_SUCCESS },
-    { { 3, 0, 0, 0x00020000 }, 0.03F, RESULT_SUCCESS },
-    { { 1271234, 0, 0, 0x00040000 }, 127.1234F, RESULT_SUCCESS },
-    { { 1020000000, 0, 0, 0 }, 1.02E+09F, RESULT_SUCCESS },
-    // dec_to_float_20 -123458677.98765434567898765435 = -1.234587E+08 (-856982897)
-    { { 0xb901187b, 0x6e9896ec, 0x27e44332, 0x80140000 }, -1.234587E+08 },
+    {{0x0000fe65, 0x00000000, 0x00000000, 0x80030000}, -65.125, RESULT_SUCCESS},
+    {{3, 0, 0, 0x00020000}, 0.03F, RESULT_SUCCESS},
+    {{1271234, 0, 0, 0x00040000}, 127.1234F, RESULT_SUCCESS},
+    {{1020000000, 0, 0, 0}, 1.02E+09F, RESULT_SUCCESS},
 };
 
 START_TEST(test_fdtf) {
@@ -505,7 +509,7 @@ END_TEST
 
 // s21_round
 
-test_struct_ddd test_pack_round[] = {
+test_struct_dd test_pack_round[] = {
     {{0x00000011, 0x00000000, 0x00000000, 0x00010000}, {0x00000002, 0x00000000, 0x00000000, 0x00000000}},
     {{0x00000010, 0x00000000, 0x00000000, 0x00010000}, {0x00000002, 0x00000000, 0x00000000, 0x00000000}},
     {{0x00002810, 0x00000000, 0x00000000, 0x00030000}, {0x0000000a, 0x00000000, 0x00000000, 0x00000000}},
@@ -516,16 +520,17 @@ test_struct_ddd test_pack_round[] = {
 
 START_TEST(test_round) {
     s21_decimal result;
-    s21_round(test_pack_round[_i].op1, &result);
-    ck_assert_mem_eq(&result, &test_pack_round[_i].op2, sizeof(s21_decimal));
+    s21_round(test_pack_round[_i].op, &result);
+    ck_assert_mem_eq(&result, &test_pack_round[_i].wait, sizeof(s21_decimal));
 }
 END_TEST
 
 // s21_truncate
 
-test_struct_dd test_pack_truncate[] = {
+test_struct_dd test_pack_truncate[] =
     // 2.1234 = 2
-    { { 0x0052f2, 0, 0, 0x040000 }, {2, 0, 0, 0} },
+    {
+        {{0x0052f2, 0, 0, 0x040000}, {2, 0, 0, 0}},
 };
 
 START_TEST(test_truncate) {
@@ -597,7 +602,7 @@ int main() {
     tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fdtf);
 
     // round
-    test_pack_size = sizeof(test_pack_round) / sizeof(test_struct_ddd);
+    test_pack_size = sizeof(test_pack_round) / sizeof(test_struct_dd);
     tcase_add_loop_test(tc, test_round, 0, test_pack_size);
 
     // truncate

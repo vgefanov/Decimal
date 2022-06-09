@@ -56,40 +56,31 @@ int big_decimal_mod_10(big_decimal src) {
 }
 
 // Конвертирует big_decimal в s21_decimal
-s21_decimal big_decimal_to_decimal(big_decimal src) {
+s21_decimal big_decimal_to_decimal(big_decimal src, int *err_code) {
+    *err_code = RESULT_SUCCESS;
     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
     big_decimal one = {1, 0, 0, 0, 0, 0, 0, 0};
     unsigned cexp = src.cexp;
     unsigned sign = src.sign;
-    int tmp_out, tmp;
+    int tmp_out;
     bool full = FALSE;
-    while (src.bits[3] || src.bits[4] || src.bits[5]) {
+    while (((src.bits[3] || src.bits[4] || src.bits[5]) && cexp) || cexp > 28) {
         full = TRUE;
         tmp_out = big_decimal_mod_10(src);
         src = simple_div(src, ten);
         cexp--;
     }
+    if (src.bits[3] || src.bits[4] || src.bits[5]) {
+        src = (big_decimal){0, 0, 0, 0, 0, 0, 0, 0};
+        *err_code = MAXLIMIT_ERROR;
+    }
     if (full && tmp_out > 4) {
-        tmp = big_decimal_mod_10(src);
         src = simple_add(src, one);
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, sign);
     set_cexp(&result, cexp);
     return result;
-}
-
-// Печатает big_decimal
-void print_big_decimal(big_decimal op) {
-    printf("[%s] %08x %08x %08x %08x %08x %08x (%x)\n", op.sign ? "-" : "+", op.bits[5], op.bits[4],
-           op.bits[3], op.bits[2], op.bits[1], op.bits[0], op.cexp);
-}
-
-// Печатает s21_decimal
-void print_decimal(s21_decimal op) {
-    big_decimal b_op = to_big_decimal(op);
-    printf("[%s] %08x %08x %08x (%x)\n", b_op.sign ? "-" : "+", b_op.bits[2], b_op.bits[1], b_op.bits[0],
-           b_op.cexp);
 }
 
 // Увеличивает коэффициент масштабирования на 1, увеличивает мантиссу на 10
@@ -103,21 +94,6 @@ big_decimal scale_big_decimal(big_decimal op) {
     }
     return result;
 }
-
-// big_decimal scale_big_decimal(big_decimal op) {
-//     big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
-//     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
-//     // unsigned long long accum = 0;
-//     result = simple_mul(op, ten);
-//     result.cexp = op.cexp++;
-//     // for (int i = 0; i < 6; i++) {
-
-//     //     accum = accum + (unsigned long long)op.bits[i] * 10;
-//     //     result.bits[i] = (unsigned)accum;
-//     //     accum = accum >> 32;
-//     // }
-//     return result;
-// }
 
 // Приводит big_decimal к нужному коэффициенту масштабирования
 big_decimal normalize_big_decimal(big_decimal op, int cexp_add) {
@@ -228,7 +204,6 @@ big_decimal simple_sub(big_decimal op1, big_decimal op2) {
         } else if (!bit_value_1 && bit_value_2) {
             if (taken) {
                 set_bit(&result, i, 0);
-                // taken = TRUE;
             } else {
                 set_bit(&result, i, 1);
                 taken = TRUE;
@@ -236,7 +211,6 @@ big_decimal simple_sub(big_decimal op1, big_decimal op2) {
         } else if (!bit_value_1 && !bit_value_2) {
             if (taken) {
                 set_bit(&result, i, 1);
-                // taken = FALSE;
             } else {
                 set_bit(&result, i, 0);
             }
@@ -266,6 +240,8 @@ big_decimal shift_bit_right(big_decimal src) {
 }
 
 big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2) {
+    unsigned exp = big_op1.cexp + big_op2.cexp;
+
     big_decimal dst = {0, 0, 0, 0, 0, 0, 0, 0};
     while (!is_null_big_decimal(big_op2)) {
         if (get_bit(big_op2, 0)) {
@@ -274,34 +250,12 @@ big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2) {
         big_op1 = shift_bit_left(big_op1);
         big_op2 = shift_bit_right(big_op2);
     }
-    return dst;
-}
-
-// Перемножает два big_decimal без учета знака
-big_decimal big_decimal_mul(s21_decimal value_1, s21_decimal value_2) {
-    big_decimal big_op1 = to_big_decimal(value_1);
-    big_decimal big_op2 = to_big_decimal(value_2);
-    unsigned exp = (unsigned)(get_cexp(value_1) + get_cexp(value_2));
-    big_decimal dst = simple_mul(big_op1, big_op2);
     dst.cexp = exp;
     return dst;
 }
 
 // Проверяет, что первый big_decimal больше второго
 int greater_big_decimal(big_decimal src1, big_decimal src2) {
-    /*
-    bool greater = FALSE;
-    for (int i = 5; i >= 0; i--) {
-        if (src1.bits[i] > src2.bits[i]) {
-            greater = TRUE;
-            break;
-        } else if (src1.bits[i] < src2.bits[i]) {
-            break;
-        }
-    }
-    return greater;
-    */
-    // проверить
     int i = 5;
     for (; i >= 0 && src1.bits[i] == src2.bits[i]; i--) {
     }
@@ -321,13 +275,6 @@ int equal_big_decimal(big_decimal src1, big_decimal src2) {
 
 // Проверяет, что первый big_decimal больше или равен второму
 int greater_or_equal_big_decimal(big_decimal src1, big_decimal src2) {
-    /*
-    int greater_or_equal = FALSE;
-    if (greater_big_decimal(src1, src2) || equal_big_decimal(src1, src2)) {
-        greater_or_equal = TRUE;
-    }
-    return greater_or_equal;
-    */
     return (greater_big_decimal(src1, src2) || equal_big_decimal(src1, src2));
 }
 
@@ -358,6 +305,7 @@ big_decimal simple_div(big_decimal src1, big_decimal src2) {
     return dst;
 }
 
+// Вычисляет остаток от деления без знаков
 big_decimal simple_mod(big_decimal src1, big_decimal src2) {
     int shift = 0;
     while (!get_bit(src2, 191 - shift)) {
@@ -385,7 +333,7 @@ big_decimal simple_mod(big_decimal src1, big_decimal src2) {
 
 // Сложение +
 int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
-    bool error = RESULT_SUCCESS;
+    int error = RESULT_SUCCESS;
     big_decimal big_op1 = to_big_decimal(value_1);
     big_decimal big_op2 = to_big_decimal(value_2);
     big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -417,18 +365,27 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             sign_res = 1;
         } else {
             dest = simple_sub(big_op1, big_op2);
-            sign_res = 1;
+            sign_res = 0;
         }
     }
     dest.cexp = exp;
-    *result = big_decimal_to_decimal(dest);
-    set_sign(result, sign_res);
+    if (is_null_big_decimal(dest)) {
+        sign_res = 0;
+    }
+    *result = big_decimal_to_decimal(dest, &error);
+    if (!error) {
+        set_sign(result, sign_res);
+    } else {
+        if (sign_res) {
+            error = MINLIMIT_ERROR;
+        }
+    }
     return error;
 }
 
 // Вычитание -
 int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
-    bool error = RESULT_SUCCESS;
+    int error = RESULT_SUCCESS;
     big_decimal big_op1 = to_big_decimal(value_1);
     big_decimal big_op2 = to_big_decimal(value_2);
     big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -453,7 +410,6 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     } else if (sign1 && sign2) {
         if (s21_is_less(value_1, value_2)) {
             dest = simple_sub(big_op2, big_op1);
-            // sign_res = 1;
         } else {
             sign_res = 1;
             dest = simple_sub(big_op1, big_op2);
@@ -466,27 +422,36 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
         sign_res = 0;
     }
     dest.cexp = exp;
-    *result = big_decimal_to_decimal(dest);
+    *result = big_decimal_to_decimal(dest, &error);
     set_sign(result, sign_res);
-    // set_cexp(result, exp);
     return error;
 }
 
 // Умножение *
 int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
+    int error = RESULT_SUCCESS;
     int sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 1;
     set_sign(&value_1, 0);
     set_sign(&value_2, 0);
     if ((sign1 && sign2) || (!sign1 && !sign2)) {
         sign_res = 0;
     }
-    big_decimal res_big = big_decimal_mul(value_1, value_2);
-    *result = big_decimal_to_decimal(res_big);
-    set_sign(result, sign_res);
-    return RESULT_SUCCESS;
+    big_decimal big_op1 = to_big_decimal(value_1);
+    big_decimal big_op2 = to_big_decimal(value_2);
+    if (is_null_big_decimal(big_op1) || is_null_big_decimal(big_op2)) {
+        big_op1.cexp = 0;
+        big_op2.cexp = 0;
+    }
+    big_decimal res_big = simple_mul(big_op1, big_op2);
+    *result = big_decimal_to_decimal(res_big, &error);
+    if (!error) {
+        set_sign(result, sign_res);
+    } else {
+        error = (sign_res) ? MINLIMIT_ERROR : MAXLIMIT_ERROR;
+    }
+    return error;
 }
 
-// Деление
 int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     int result_code = RESULT_SUCCESS;
     int sign1 = get_sign(value_1), sign2 = get_sign(value_2), sign_res = 1;
@@ -499,14 +464,15 @@ int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     big_decimal value_2_big_decimal = to_big_decimal(value_2);
     if (is_null_big_decimal(value_2_big_decimal)) {
         result_code = DIVBYZERO_ERROR;
+        *result = (s21_decimal){0, 0, 0, 0};
     } else {
         if (value_1_big_decimal.cexp > value_2_big_decimal.cexp) {
-            value_2_big_decimal =
-                normalize_big_decimal(value_2_big_decimal, value_1_big_decimal.cexp - value_2_big_decimal.cexp);
+            value_2_big_decimal = normalize_big_decimal(value_2_big_decimal,
+                                                        value_1_big_decimal.cexp - value_2_big_decimal.cexp);
         }
         if (value_2_big_decimal.cexp > value_1_big_decimal.cexp) {
-            value_1_big_decimal =
-                normalize_big_decimal(value_1_big_decimal, value_2_big_decimal.cexp - value_1_big_decimal.cexp);
+            value_1_big_decimal = normalize_big_decimal(value_1_big_decimal,
+                                                        value_2_big_decimal.cexp - value_1_big_decimal.cexp);
         }
         big_decimal dst_big_decimal = simple_div(value_1_big_decimal, value_2_big_decimal);
         value_1_big_decimal = simple_mod(value_1_big_decimal, value_2_big_decimal);
@@ -515,12 +481,13 @@ int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
             value_1_big_decimal = simple_mul(value_1_big_decimal, ten);
             dst_big_decimal = simple_mul(dst_big_decimal, ten);
-            dst_big_decimal = simple_add(dst_big_decimal, simple_div(value_1_big_decimal, value_2_big_decimal));
+            dst_big_decimal =
+                simple_add(dst_big_decimal, simple_div(value_1_big_decimal, value_2_big_decimal));
             value_1_big_decimal = simple_mod(value_1_big_decimal, value_2_big_decimal);
             cexp++;
         }
         dst_big_decimal.cexp = cexp;
-        *result = big_decimal_to_decimal(dst_big_decimal);
+        *result = big_decimal_to_decimal(dst_big_decimal, &result_code);
         set_sign(result, sign_res);
     }
     return result_code;
@@ -541,15 +508,15 @@ int s21_mod(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             result_code = DIVBYZERO_ERROR;
         } else {
             if (value_1_big_decimal.cexp > value_2_big_decimal.cexp) {
-                value_2_big_decimal = normalize_big_decimal(value_2_big_decimal,
-                                                            value_1_big_decimal.cexp - value_2_big_decimal.cexp);
+                value_2_big_decimal = normalize_big_decimal(
+                    value_2_big_decimal, value_1_big_decimal.cexp - value_2_big_decimal.cexp);
             }
             if (value_2_big_decimal.cexp > value_1_big_decimal.cexp) {
-                value_1_big_decimal = normalize_big_decimal(value_1_big_decimal,
-                                                            value_2_big_decimal.cexp - value_1_big_decimal.cexp);
+                value_1_big_decimal = normalize_big_decimal(
+                    value_1_big_decimal, value_2_big_decimal.cexp - value_1_big_decimal.cexp);
             }
             value_1_big_decimal = simple_mod(value_1_big_decimal, value_2_big_decimal);
-            value_1 = big_decimal_to_decimal(value_1_big_decimal);
+            value_1 = big_decimal_to_decimal(value_1_big_decimal, &result_code);
         }
     } else {
         dst_exp = get_cexp(value_1);
@@ -631,17 +598,18 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
     if (src == -INFINITY) {
         result.sign = 1;
     }
-    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY || src < 1e-28) {
+    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY ||
+        src < 1e-28) {
         result_code = RESULT_ERROR;
     } else {
         char float_str[FLOAT_STR_LEN];
-        sprintf(float_str, FLOAT2DECIMAL_MASK, src);
+        snprintf(float_str, FLOAT_STR_LEN, FLOAT2DECIMAL_MASK, src);
         // Получаем +1.271234e+02
         //          -1.234500e-02
         int cexp_delta = (float_str[11] - '0') * 10 + (float_str[12] - '0');
         if (float_str[10] == '-') {
             cexp_delta = -cexp_delta;
-        };
+        }
         float_str[9] = 0;
         // Обрезаем нули
         int end_pos = strlen(float_str) - 1;
@@ -673,7 +641,8 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
             result.sign = 1;
         }
     }
-    *dst = big_decimal_to_decimal(result);
+    int temp_result;
+    *dst = big_decimal_to_decimal(result, &temp_result);
     return result_code;
 }
 
@@ -727,11 +696,16 @@ int s21_from_decimal_to_float(s21_decimal src, float *dst) {
 int s21_floor(s21_decimal value, s21_decimal *result) {
     s21_decimal delta = {0x87ffffff, 0x1f128130, 0x1027e72f, 0x801c0000};
     unsigned sign = get_sign(value);
-    if (sign) {
-        s21_add(value, delta, &value);
-        s21_round(value, result);
+    unsigned cexp = get_cexp(value);
+    if (cexp != 0) {
+        if (sign) {
+            s21_add(value, delta, &value);
+            s21_round(value, result);
+        } else {
+            s21_truncate(value, result);
+        }
     } else {
-        s21_truncate(value, result);
+        *result = value;
     }
     return RESULT_SUCCESS;
 }
@@ -739,20 +713,27 @@ int s21_floor(s21_decimal value, s21_decimal *result) {
 // Округляет Decimal до ближайшего целого числа.
 int s21_round(s21_decimal value, s21_decimal *result) {
     unsigned sign = get_sign(value);
-    s21_decimal tmp = {5, 0, 0, 0x00010000};
-    if (sign) {
-        tmp.bits[3] = 0x80010000;
-        s21_add(value, tmp, &value);
+    unsigned cexp = get_cexp(value);
+    if (cexp != 0) {
+        s21_decimal tmp = {5, 0, 0, 0x00010000};
+
+        if (sign) {
+            tmp.bits[3] = 0x80010000;
+            s21_add(value, tmp, &value);
+        } else {
+            s21_add(value, tmp, &value);
+        }
+        s21_truncate(value, result);
     } else {
-        s21_add(value, tmp, &value);
+        *result = value;
     }
-    s21_truncate(value, result);
     return RESULT_SUCCESS;
 }
 
 // Возвращает целые цифры указанного Decimal числа; любые дробные цифры
 // отбрасываются, включая конечные нули.
 int s21_truncate(s21_decimal value, s21_decimal *result) {
+    int error = RESULT_SUCCESS;
     big_decimal div10 = {{10, 0, 0, 0, 0, 0}, 0, 0};
     big_decimal tmp = to_big_decimal(value);
     unsigned cexp = tmp.cexp;
@@ -761,8 +742,8 @@ int s21_truncate(s21_decimal value, s21_decimal *result) {
         tmp = simple_div(tmp, div10);
     }
     tmp.sign = sign;
-    *result = big_decimal_to_decimal(tmp);
-    return RESULT_SUCCESS;
+    *result = big_decimal_to_decimal(tmp, &error);
+    return error;
 }
 
 // Возвращает результат умножения указанного Decimal на -1.
@@ -775,21 +756,3 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
     }
     return RESULT_SUCCESS;
 }
-
-// int main() {
-//     printf("%#08x\n", 0b10111001000000010001100001111011);
-//     printf("%#08x\n", 0b01101110100110001001011011101100);
-//     printf("%#08x\n", 0b00100111111001000100001100110010);
-//     printf("%#08x\n", 0b10000000000101000000000000000000);
-//     float op2 = 1.02E+09F;
-//     s21_decimal result;
-//     s21_from_float_to_decimal(op2, &result);
-//     printf("%+.6e\n", op2);
-//     print_decimal(result);
-
-// //     //s21_decimal op1 = { 1271234, 0, 0, 0x00040000 };
-// //     float op2 = 127.1234F;
-// //     s21_decimal result;
-// //     s21_from_float_to_decimal(op2, &result);
-// //     // +1.2712340e+02
-// }
