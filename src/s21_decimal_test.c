@@ -258,10 +258,16 @@ test_struct_ddd test_pack_mod[] = {
      {0x00000003, 0x00000000, 0x00000000, 0x00010000},
      RESULT_SUCCESS},
 
+    {{0x00000002, 0x00000000, 0x00000000, 0x00000000},
+     {0x0000000b, 0x00000000, 0x00000000, 0x00010000},
+     {0x00000009, 0x00000000, 0x00000000, 0x00010000},
+     RESULT_SUCCESS},
+
     {{0x00002810, 0x00000000, 0x00000000, 0x00030000},
      {0x0000000b, 0x00000000, 0x00000000, 0x00010000},
      {0x00000164, 0x00000000, 0x00000000, 0x00030000},
      RESULT_SUCCESS},
+
 };
 
 START_TEST(test_mod) {
@@ -568,6 +574,19 @@ START_TEST(test_truncate) {
 }
 END_TEST
 
+test_struct_dd test_pack_floor[] = {
+    {{0x0000000f, 0x00000000, 0x00000000, 0x00010000}, {0x00000001, 0x00000000, 0x00000000, 0x00000000}},
+    {{0x0000000f, 0x00000000, 0x00000000, 0x80010000}, {0x00000002, 0x00000000, 0x00000000, 0x80000000}},
+
+};
+
+START_TEST(test_floor) {
+    s21_decimal result;
+    s21_floor(test_pack_floor[_i].op, &result);
+    ck_assert_mem_eq(&result, &test_pack_floor[_i].wait, sizeof(s21_decimal));
+}
+END_TEST
+
 // main
 
 int main() {
@@ -636,6 +655,9 @@ int main() {
     // truncate
     test_pack_size = sizeof(test_pack_truncate) / sizeof(test_struct_dd);
     tcase_add_loop_test(tc, test_truncate, 0, test_pack_size);
+
+    test_pack_size = sizeof(test_pack_floor) / sizeof(test_struct_dd);
+    tcase_add_loop_test(tc, test_floor, 0, test_pack_size);
 
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);
