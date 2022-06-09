@@ -16,6 +16,7 @@ typedef struct {
 } big_decimal;
 
 big_decimal simple_div(big_decimal src1, big_decimal src2);
+big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2);
 
 // Возвращает степень коэффициента масштабирования
 unsigned get_cexp(s21_decimal op) { return (op.bits[3] & CEXP) >> 16; }
@@ -80,6 +81,21 @@ big_decimal scale_big_decimal(big_decimal op) {
     }
     return result;
 }
+
+// big_decimal scale_big_decimal(big_decimal op) {
+//     big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
+//     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
+//     // unsigned long long accum = 0;
+//     result = simple_mul(op, ten);
+//     result.cexp = op.cexp++;
+//     // for (int i = 0; i < 6; i++) {
+
+//     //     accum = accum + (unsigned long long)op.bits[i] * 10;
+//     //     result.bits[i] = (unsigned)accum;
+//     //     accum = accum >> 32;
+//     // }
+//     return result;
+// }
 
 // Приводит big_decimal к нужному коэффициенту масштабирования
 big_decimal normalize_big_decimal(big_decimal op, int cexp_add) {
@@ -157,6 +173,8 @@ void set_bit(big_decimal *src, int i, int value) {
 
 // Складывает два big_decimal без учета знака
 big_decimal simple_add(big_decimal op1, big_decimal op2) {
+    // print_big_decimal(op1);
+    // print_big_decimal(op2);
     big_decimal result = {{0, 0, 0, 0, 0, 0}, op1.cexp, 0};
     unsigned long long accum = 0;
     for (int i = 0; i < 6; i++) {
@@ -164,6 +182,7 @@ big_decimal simple_add(big_decimal op1, big_decimal op2) {
         result.bits[i] = (unsigned)accum;
         accum = accum >> 32;
     }
+    // print_big_decimal(result);
     return result;
 }
 
@@ -387,7 +406,7 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             dest = simple_sub(big_op2, big_op1);
             sign_res = 1;
         } else {
-            dest = simple_sub(big_op2, big_op1);
+            dest = simple_sub(big_op1, big_op2);
             sign_res = 1;
         }
     }
@@ -424,8 +443,9 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     } else if (sign1 && sign2) {
         if (s21_is_less(value_1, value_2)) {
             dest = simple_sub(big_op2, big_op1);
-            sign_res = 1;
+            // sign_res = 1;
         } else {
+            sign_res = 1;
             dest = simple_sub(big_op1, big_op2);
         }
     } else if (sign1 && !sign2) {
@@ -435,9 +455,10 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
         dest = simple_add(big_op1, big_op2);
         sign_res = 0;
     }
+    dest.cexp = exp;
     *result = big_decimal_to_decimal(dest);
     set_sign(result, sign_res);
-    set_cexp(result, exp);
+    // set_cexp(result, exp);
     return error;
 }
 
