@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define CEXP 0x00FF0000U
 #define SIGN 0x80000000U
@@ -47,7 +48,7 @@ s21_decimal big_decimal_to_decimal(big_decimal src) {
     unsigned sign = src.sign;
     while (src.bits[3] || src.bits[4] || src.bits[5]) {
         src = simple_div(src, ten);
-        src.cexp--;
+        cexp--;
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, sign);
@@ -390,10 +391,9 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             sign_res = 1;
         }
     }
-
+    dest.cexp = exp;
     *result = big_decimal_to_decimal(dest);
     set_sign(result, sign_res);
-    set_cexp(result, exp);
     return error;
 }
 
@@ -580,40 +580,59 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
 // Преобразовывает из float
 #define MAX_DECIMAL 79228162514264337593543950335.f
 #define MIN_DECIMAL -79228162514264337593543950335.f
-#define FLOAT2DECIMAL_MASK "%+.28f"
+#define FLOAT2DECIMAL_MASK "%+.6e"
 #define FLOAT_STR_LEN 50
 
 int s21_from_float_to_decimal(float src, s21_decimal *dst) {
-    // проверка на максимальный decimal??
+    int result_code = RESULT_SUCCESS;
     big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
-    char *float_str = malloc(FLOAT_STR_LEN);
-    sprintf(float_str, FLOAT2DECIMAL_MASK, src);
-    int end_pos = strlen(float_str) - 1;
-    while (float_str[end_pos] == '0') {
-        float_str[end_pos] = 0;
-        end_pos--;
-    }
-    // формируем целочисленное представление
-    bool after_dot = FALSE;
-    int cexp = 0;
-    for (int pos = 1; float_str[pos]; pos++) {
-        if (float_str[pos] == '.') {
-            after_dot = TRUE;
-        } else {
-            result = scale_big_decimal(result);
-            result.bits[0] += (float_str[pos] - '0');
-            if (after_dot) {
-                cexp++;
-            }
-        }
-    }
-    // расставляем степень и экспоненту
-    result.cexp = cexp;
-    if (float_str[0] == '-') {
+    if (src == -INFINITY) {
         result.sign = 1;
     }
+    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY ) {
+        result_code = RESULT_ERROR;
+    } else {
+        char float_str[FLOAT_STR_LEN];
+        sprintf(float_str, FLOAT2DECIMAL_MASK, src);
+        // Получаем +1.271234e+02
+        //          -1.234500e-02
+        int cexp_delta = (float_str[11] - '0') * 10 + (float_str[12] - '0');
+        if (float_str[10] == '-') {
+            cexp_delta = -cexp_delta;
+        };
+        float_str[9] = 0;
+        // Обрезаем нули
+        int end_pos = strlen(float_str) - 1;
+        while (float_str[end_pos] == '0') {
+            float_str[end_pos] = 0;
+            end_pos--;
+        }
+        // Формируем целочисленное представление
+        bool after_dot = FALSE;
+        int cexp = 0;
+        for (int pos = 1; float_str[pos]; pos++) {
+            if (float_str[pos] == '.') {
+                after_dot = TRUE;
+            } else {
+                result = scale_big_decimal(result);
+                result.bits[0] += (float_str[pos] - '0');
+                if (after_dot) {
+                    cexp++;
+                }
+            }
+        }
+        while (cexp_delta > cexp) {
+            result = scale_big_decimal(result);
+            cexp++;
+        }
+        // Pасставляем степень и экспоненту
+        result.cexp = cexp - cexp_delta;
+        if (float_str[0] == '-') {
+            result.sign = 1;
+        }
+    }
     *dst = big_decimal_to_decimal(result);
-    return 0;
+    return result_code;
 }
 
 // В int
@@ -708,9 +727,15 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
 }
 
 // int main() {
-//     printf("%#08x, ", 0b10000010111000100101101011101101)
-//     int result;
-//     s21_decimal op = {10000, 0, 0, 0x00030000 };
-//     print_decimal(op);
-//     s21_from_decimal_to_int(op, &result);
+//     float op2 = 1.02E+09F;
+//     s21_decimal result;
+//     s21_from_float_to_decimal(op2, &result);
+//     printf("%+.6e\n", op2);
+//     print_decimal(result);
+
+// //     //s21_decimal op1 = { 1271234, 0, 0, 0x00040000 };
+// //     float op2 = 127.1234F;
+// //     s21_decimal result;
+// //     s21_from_float_to_decimal(op2, &result);
+// //     // +1.2712340e+02
 // }

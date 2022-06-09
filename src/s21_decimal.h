@@ -2,12 +2,15 @@
 #define SRC_S21_DECIMAL_H_
 
 typedef struct {
-    unsigned bits[4];
+    int bits[4];
 } s21_decimal;
 
 #define TRUE 1
 #define FALSE 0
 typedef unsigned short bool;
+
+#define RESULT_SUCCESS 0
+#define RESULT_ERROR   1
 
 // Арифметические операторы
 
