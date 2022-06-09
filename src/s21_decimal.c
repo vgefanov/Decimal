@@ -47,7 +47,7 @@ s21_decimal big_decimal_to_decimal(big_decimal src) {
     unsigned sign = src.sign;
     while (src.bits[3] || src.bits[4] || src.bits[5]) {
         src = simple_div(src, ten);
-        src.cexp--;
+        cexp--;
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, sign);
@@ -390,10 +390,9 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             sign_res = 1;
         }
     }
-
+    dest.cexp = exp;
     *result = big_decimal_to_decimal(dest);
     set_sign(result, sign_res);
-    set_cexp(result, exp);
     return error;
 }
 
@@ -708,9 +707,23 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
 }
 
 // int main() {
-//     printf("%#08x, ", 0b10000010111000100101101011101101)
-//     int result;
-//     s21_decimal op = {10000, 0, 0, 0x00030000 };
-//     print_decimal(op);
-//     s21_from_decimal_to_int(op, &result);
+//     s21_decimal src1, src2, origin;
+//     src1.bits[0] = 0b11111111111111111111111111110110;
+//     src1.bits[1] = 0b11111111111111111111111111111111;
+//     src1.bits[2] = 0b00000000000000000000000000001001;
+//     src1.bits[3] = 0b00000000000000010000000000000000;
+//     src2.bits[0] = 0b00111001100010111010010101100010;
+//     src2.bits[1] = 0b00000000000000000000000000000000;
+//     src2.bits[2] = 0b00000000000000000000000000000000;
+//     src2.bits[3] = 0b00000000000000000000000000000000;
+
+//     origin.bits[0] = 0b11000110011101000101101010011110;
+//     origin.bits[1] = 0b11111111111111111111111111111111;
+//     origin.bits[2] = 0b00111001100010111010010101100001;
+//     origin.bits[3] = 0b00000000000000000000000000000000;
+
+//     print_decimal(src1);
+//     print_decimal(src2);
+//     // print_decimal(res);
+//     print_decimal(origin);
 // }
