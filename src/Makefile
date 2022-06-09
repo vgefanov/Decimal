@@ -12,32 +12,25 @@ BUILD_DIR = .
 OUTFILE_TEST = s21_decimal_test
 
 
-all: s21_decimal.a
-
+all: clean s21_decimal.a test
 
 clean:
 	rm -rf ./lcov_report
 	rm *.o *.a *.gcno *.gcda *.gcov *.info $(BUILD_DIR)/$(OUTFILE_TEST)
 
-
-test:
-	$(CC) $(CFLAGS_TEST) $(SOURCES) $(SOURCES_TEST) -o $(BUILD_DIR)/$(OUTFILE_TEST)
-	$(BUILD_DIR)/$(OUTFILE_TEST)
-
-
 s21_decimal.a:
 	$(CC) $(CFLAGS) -c $(SOURCES) -o s21_decimal.o
 	ar rc s21_decimal.a s21_decimal.o
 
+test:
+	$(CC) $(CFLAGS_TEST) $(SOURCES) $(SOURCES_TEST) -o $(BUILD_DIR)/$(OUTFILE_TEST)
+	$(BUILD_DIR)/$(OUTFILE_TEST)
 
 gcov_report:
 	$(CC) $(CFLAGS_TEST) $(CFLAGS_GCOV) $(SOURCES) $(SOURCES_TEST) -o $(BUILD_DIR)/$(OUTFILE_TEST)
 	$(BUILD_DIR)/$(OUTFILE_TEST)
 	gcov s21_decimal
 	gcov -f s21_decimal.gcda
-
-
-lcov_report:
 	lcov --capture --directory . --output-file main_coverage.info
 	genhtml main_coverage.info --output-directory lcov_report
 

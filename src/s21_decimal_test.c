@@ -452,6 +452,7 @@ START_TEST(test_not_equal) {
 }
 END_TEST
 
+// s21_from_int_to_decimal
 // s21_from_decimal_to_int
 
 test_struct_di test_pack_fdti[] = {
@@ -469,6 +470,7 @@ START_TEST(test_fdti) {
     ck_assert_int_eq(result, test_pack_fdti[_i].op2);
 }
 END_TEST
+
 
 // s21_from_float_to_decimal
 
@@ -507,6 +509,19 @@ START_TEST(test_fdtf) {
 }
 END_TEST
 
+// s21_floor
+
+test_struct_ddd test_pack_floor[] = {
+
+};
+
+START_TEST(test_floor) {
+    s21_decimal result;
+    s21_floor(test_pack_floor[_i].op1, &result);
+    ck_assert_mem_eq(&result, &test_pack_floor[_i].op2, sizeof(s21_decimal));
+}
+END_TEST
+
 // s21_round
 
 test_struct_dd test_pack_round[] = {
@@ -527,16 +542,33 @@ END_TEST
 
 // s21_truncate
 
-test_struct_dd test_pack_truncate[] =
-    // 2.1234 = 2
-    {
-        {{0x0052f2, 0, 0, 0x040000}, {2, 0, 0, 0}},
+test_struct_dd test_pack_truncate[] = {
+    {{0x0052f2, 0, 0, 0x040000}, {2, 0, 0, 0}},
+
 };
 
 START_TEST(test_truncate) {
     s21_decimal result;
     s21_truncate(test_pack_truncate[_i].op, &result);
     ck_assert_mem_eq(&result, &test_pack_truncate[_i].wait, sizeof(s21_decimal));
+}
+END_TEST
+
+// s21_negate
+
+test_struct_dd test_pack_negate[] = {
+    {{0x00000011, 0x00000000, 0x00000000, 0x00010000}, {0x00000011, 0x00000000, 0x00000000, 0x80010000}},
+    {{0x00000010, 0x00000000, 0x00000000, 0x00010000}, {0x00000010, 0x00000000, 0x00000000, 0x80010000}},
+    {{0x00002810, 0x00000000, 0x00000000, 0x00030000}, {0x00002810, 0x00000000, 0x00000000, 0x80030000}},
+    {{0x00000010, 0x00000000, 0x00000000, 0x80010000}, {0x00000010, 0x00000000, 0x00000000, 0x00010000}},
+    {{0x0000000f, 0x00000000, 0x00000000, 0x80010000}, {0x0000000f, 0x00000000, 0x00000000, 0x00010000}},
+    {{0x00000095, 0x00000000, 0x00000000, 0x80020000}, {0x00000095, 0x00000000, 0x00000000, 0x00020000}},
+};
+
+START_TEST(test_negate) {
+    s21_decimal result;
+    s21_negate(test_pack_negate[_i].op, &result);
+    ck_assert_mem_eq(&result, &test_pack_negate[_i].wait, sizeof(s21_decimal));
 }
 END_TEST
 
@@ -588,6 +620,7 @@ int main() {
     // Не равно !=
     int test_pack_size_not_equal = sizeof(test_pack_comparison) / sizeof(test_struct_ddi);
     tcase_add_loop_test(tc, test_not_equal, 0, test_pack_size_not_equal);
+    //tcase_add_loop_test(tc, test_fitd, 0, test_pack_size_fitd_fdti);
 
     // s21_from_decimal_to_int
     int test_pack_size_fdti = sizeof(test_pack_fdti) / sizeof(test_struct_di);
@@ -601,6 +634,10 @@ int main() {
     int test_pack_size_fdtf = sizeof(test_pack_fdtf) / sizeof(test_struct_df);
     tcase_add_loop_test(tc, test_fdtf, 0, test_pack_size_fdtf);
 
+    // floor
+    test_pack_size = sizeof(test_pack_floor) / sizeof(test_struct_ddd);
+    tcase_add_loop_test(tc, test_floor, 0, test_pack_size);
+
     // round
     test_pack_size = sizeof(test_pack_round) / sizeof(test_struct_dd);
     tcase_add_loop_test(tc, test_round, 0, test_pack_size);
@@ -608,6 +645,10 @@ int main() {
     // truncate
     test_pack_size = sizeof(test_pack_truncate) / sizeof(test_struct_dd);
     tcase_add_loop_test(tc, test_truncate, 0, test_pack_size);
+
+    // negate
+    test_pack_size = sizeof(test_pack_negate) / sizeof(test_struct_dd);
+    tcase_add_loop_test(tc, test_negate, 0, test_pack_size);
 
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);
