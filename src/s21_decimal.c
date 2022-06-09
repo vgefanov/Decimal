@@ -15,6 +15,7 @@ typedef struct {
 } big_decimal;
 
 big_decimal simple_div(big_decimal src1, big_decimal src2);
+big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2);
 
 // Возвращает степень коэффициента масштабирования
 unsigned get_cexp(s21_decimal op) { return (op.bits[3] & CEXP) >> 16; }
@@ -79,6 +80,21 @@ big_decimal scale_big_decimal(big_decimal op) {
     }
     return result;
 }
+
+// big_decimal scale_big_decimal(big_decimal op) {
+//     big_decimal result = {0, 0, 0, 0, 0, 0, 0, 0};
+//     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
+//     // unsigned long long accum = 0;
+//     result = simple_mul(op, ten);
+//     result.cexp = op.cexp++;
+//     // for (int i = 0; i < 6; i++) {
+
+//     //     accum = accum + (unsigned long long)op.bits[i] * 10;
+//     //     result.bits[i] = (unsigned)accum;
+//     //     accum = accum >> 32;
+//     // }
+//     return result;
+// }
 
 // Приводит big_decimal к нужному коэффициенту масштабирования
 big_decimal normalize_big_decimal(big_decimal op, int cexp_add) {
@@ -156,6 +172,8 @@ void set_bit(big_decimal *src, int i, int value) {
 
 // Складывает два big_decimal без учета знака
 big_decimal simple_add(big_decimal op1, big_decimal op2) {
+    // print_big_decimal(op1);
+    // print_big_decimal(op2);
     big_decimal result = {{0, 0, 0, 0, 0, 0}, op1.cexp, 0};
     unsigned long long accum = 0;
     for (int i = 0; i < 6; i++) {
@@ -163,6 +181,7 @@ big_decimal simple_add(big_decimal op1, big_decimal op2) {
         result.bits[i] = (unsigned)accum;
         accum = accum >> 32;
     }
+    // print_big_decimal(result);
     return result;
 }
 
@@ -386,7 +405,7 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
             dest = simple_sub(big_op2, big_op1);
             sign_res = 1;
         } else {
-            dest = simple_sub(big_op2, big_op1);
+            dest = simple_sub(big_op1, big_op2);
             sign_res = 1;
         }
     }
@@ -423,8 +442,9 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     } else if (sign1 && sign2) {
         if (s21_is_less(value_1, value_2)) {
             dest = simple_sub(big_op2, big_op1);
-            sign_res = 1;
+            // sign_res = 1;
         } else {
+            sign_res = 1;
             dest = simple_sub(big_op1, big_op2);
         }
     } else if (sign1 && !sign2) {
@@ -434,9 +454,10 @@ int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
         dest = simple_add(big_op1, big_op2);
         sign_res = 0;
     }
+    dest.cexp = exp;
     *result = big_decimal_to_decimal(dest);
     set_sign(result, sign_res);
-    set_cexp(result, exp);
+    // set_cexp(result, exp);
     return error;
 }
 
@@ -707,23 +728,35 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
 }
 
 // int main() {
-//     s21_decimal src1, src2, origin;
-//     src1.bits[0] = 0b11111111111111111111111111110110;
-//     src1.bits[1] = 0b11111111111111111111111111111111;
-//     src1.bits[2] = 0b00000000000000000000000000001001;
-//     src1.bits[3] = 0b00000000000000010000000000000000;
-//     src2.bits[0] = 0b00111001100010111010010101100010;
-//     src2.bits[1] = 0b00000000000000000000000000000000;
-//     src2.bits[2] = 0b00000000000000000000000000000000;
-//     src2.bits[3] = 0b00000000000000000000000000000000;
+//     s21_decimal src1, src2, origin, res;
+//     src1.bits[0] = 0b10010001000010101111010011001010;
+//     src1.bits[1] = 0b11000000010001011101010111110010;
+//     src1.bits[2] = 0b00100111111001000001101100000000;
+//     src1.bits[3] = 0b10000000000101010000000000000000;
+//     src2.bits[0] = 0b00010001110011011101000110000101;
+//     src2.bits[1] = 0b11110101101111000110111111000000;
+//     src2.bits[2] = 0b00000010110101010000111100111111;
+//     src2.bits[3] = 0b00000000000100000000000000000000;
 
-//     origin.bits[0] = 0b11000110011101000101101010011110;
-//     origin.bits[1] = 0b11111111111111111111111111111111;
-//     origin.bits[2] = 0b00111001100010111010010101100001;
-//     origin.bits[3] = 0b00000000000000000000000000000000;
-
+//     origin.bits[0] = 0b11010010000011011110010110111111;
+//     origin.bits[1] = 0b10100111010011100111001000100001;
+//     origin.bits[2] = 0b00011100010100111001110111101101;
+//     origin.bits[3] = 0b10000000000100010000000000000000;
+//     s21_sub(src1, src2, &res);
 //     print_decimal(src1);
 //     print_decimal(src2);
-//     // print_decimal(res);
 //     print_decimal(origin);
+//     print_decimal(res);
+//     // {{0x82e25aed, 0xf9e825ad, 0xb03ef094, 0x800e0000},
+//     //  {0x481b1f98, 0xfbfd896d, 0x00046d77, 0x80120000},
+//     //  {0xb629b5da, 0xf9ea0c7f, 0xb03ef094, 0x800e0000}},
+//     // s21_decimal src1 = {0x82e25aed, 0xf9e825ad, 0xb03ef094, 0x800e0000};
+//     // s21_decimal src2 = {0x481b1f98, 0xfbfd896d, 0x00046d77, 0x80120000};
+//     // s21_decimal origin = {0xb629b5da, 0xf9ea0c7f, 0xb03ef094, 0x800e0000};
+//     // s21_decimal res;
+//     // s21_add(src1, src2, &res);
+//     // print_decimal(src1);
+//     // print_decimal(src2);
+//     // print_decimal(res);
+//     // print_decimal(origin);
 // }
