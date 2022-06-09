@@ -1,10 +1,10 @@
 #include "s21_decimal.h"
 
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define CEXP 0x00FF0000U
 #define SIGN 0x80000000U
@@ -15,6 +15,8 @@ typedef struct {
     unsigned sign;
 } big_decimal;
 
+int get_bit(big_decimal src, int i);
+big_decimal simple_add(big_decimal op1, big_decimal op2);
 big_decimal simple_div(big_decimal src1, big_decimal src2);
 big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2);
 
@@ -42,14 +44,33 @@ big_decimal to_big_decimal(s21_decimal op) {
     return result;
 }
 
+int big_decimal_mod_10(big_decimal src) {
+    int dst = 0;
+    for (int i = 191; i >= 0; i--) {
+        dst = dst << 1;
+        dst |= get_bit(src, i);
+        if (dst >= 10) dst -= 10;
+    }
+    return dst;
+}
+
 // Конвертирует big_decimal в s21_decimal
 s21_decimal big_decimal_to_decimal(big_decimal src) {
     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
+    big_decimal one = {1, 0, 0, 0, 0, 0, 0, 0};
     unsigned cexp = src.cexp;
     unsigned sign = src.sign;
+    int tmp_out, tmp;
+    bool full = FALSE;
     while (src.bits[3] || src.bits[4] || src.bits[5]) {
+        full = TRUE;
+        tmp_out = big_decimal_mod_10(src);
         src = simple_div(src, ten);
         cexp--;
+    }
+    if (full && tmp_out > 4) {
+        tmp = big_decimal_mod_10(src);
+        src = simple_add(src, one);
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, sign);
@@ -173,8 +194,6 @@ void set_bit(big_decimal *src, int i, int value) {
 
 // Складывает два big_decimal без учета знака
 big_decimal simple_add(big_decimal op1, big_decimal op2) {
-    // print_big_decimal(op1);
-    // print_big_decimal(op2);
     big_decimal result = {{0, 0, 0, 0, 0, 0}, op1.cexp, 0};
     unsigned long long accum = 0;
     for (int i = 0; i < 6; i++) {
@@ -182,7 +201,6 @@ big_decimal simple_add(big_decimal op1, big_decimal op2) {
         result.bits[i] = (unsigned)accum;
         accum = accum >> 32;
     }
-    // print_big_decimal(result);
     return result;
 }
 
@@ -613,7 +631,7 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
     if (src == -INFINITY) {
         result.sign = 1;
     }
-    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY ) {
+    if (src > MAX_DECIMAL || src < MIN_DECIMAL || isnan(src) || src == INFINITY || src == -INFINITY) {
         result_code = RESULT_ERROR;
     } else {
         char float_str[FLOAT_STR_LEN];
@@ -753,16 +771,33 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
     return RESULT_SUCCESS;
 }
 
-//int main() {
-//     float op2 = 1.02E+09F;
-//     s21_decimal result;
-//     s21_from_float_to_decimal(op2, &result);
-//     printf("%+.6e\n", op2);
-//     print_decimal(result);
-
-// //     //s21_decimal op1 = { 1271234, 0, 0, 0x00040000 };
-// //     float op2 = 127.1234F;
-// //     s21_decimal result;
-// //     s21_from_float_to_decimal(op2, &result);
-// //     // +1.2712340e+02
-//}
+// int main() {
+//     int dst = 0;
+//     s21_decimal src1, src2, origin, result;
+//     dst <<= 1;
+//     printf("%d\n", dst);
+//     // src1 = 12345677.987654345678987654346;
+//     // src2 = 87654323456.9876545678987653;
+//     // src1.bits[0] = 0b10010001000010101111010011001010;
+//     // src1.bits[1] = 0b11000000010001011101010111110010;
+//     // src1.bits[2] = 0b00100111111001000001101100000000;
+//     // src1.bits[3] = 0b00000000000101010000000000000000;
+//     // src2.bits[0] = 0b00010001110011011101000110000101;
+//     // src2.bits[1] = 0b11110101101111000110111111000000;
+//     // src2.bits[2] = 0b00000010110101010000111100111111;
+//     // src2.bits[3] = 0b00000000000100000000000000000000;
+//     // origin.bits[0] = 0b11010010000011011110010110111111;
+//     // origin.bits[1] = 0b10100111010011100111001000100001;
+//     // origin.bits[2] = 0b00011100010100111001110111101101;
+//     // origin.bits[3] = 0b00000000000100010000000000000000;
+//     // s21_add(src1, src2, &result);
+//     // print_decimal(src1);
+//     // print_decimal(src2);
+//     // print_decimal(origin);
+//     // print_decimal(result);
+//     //     //s21_decimal op1 = { 1271234, 0, 0, 0x00040000 };
+//     //     float op2 = 127.1234F;
+//     //     s21_decimal result;
+//     //     s21_from_float_to_decimal(op2, &result);
+//     //     // +1.2712340e+02
+// }
