@@ -15,6 +15,11 @@ typedef struct {
 } test_struct_df;
 
 typedef struct {
+    s21_decimal op;
+    s21_decimal wait;
+} test_struct_dd;
+
+typedef struct {
     s21_decimal op1;
     s21_decimal op2;
     s21_decimal wait;
@@ -481,6 +486,20 @@ START_TEST(test_round) {
 }
 END_TEST
 
+// s21_truncate
+
+test_struct_dd test_pack_truncate[] = {
+    // 2.1234 = 2
+    { { 0x0052f2, 0, 0, 0x040000 }, {2, 0, 0, 0} },
+};
+
+START_TEST(test_truncate) {
+    s21_decimal result;
+    s21_truncate(test_pack_truncate[_i].op, &result);
+    ck_assert_mem_eq(&result, &test_pack_truncate[_i].wait, sizeof(s21_decimal));
+}
+END_TEST
+
 // main
 
 int main() {
@@ -545,6 +564,10 @@ int main() {
     // round
     test_pack_size = sizeof(test_pack_round) / sizeof(test_struct_ddd);
     tcase_add_loop_test(tc, test_round, 0, test_pack_size);
+
+    // truncate
+    test_pack_size = sizeof(test_pack_truncate) / sizeof(test_struct_dd);
+    tcase_add_loop_test(tc, test_truncate, 0, test_pack_size);
 
     srunner_run_all(sr, CK_ENV);
     srunner_free(sr);

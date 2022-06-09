@@ -356,7 +356,7 @@ big_decimal simple_mod(big_decimal src1, big_decimal src2) {
 
 // Сложение +
 int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
-    bool error = FALSE;
+    bool error = RESULT_SUCCESS;
     big_decimal big_op1 = to_big_decimal(value_1);
     big_decimal big_op2 = to_big_decimal(value_2);
     big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -399,7 +399,7 @@ int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
 
 // Вычитание -
 int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
-    bool error = FALSE;
+    bool error = RESULT_SUCCESS;
     big_decimal big_op1 = to_big_decimal(value_1);
     big_decimal big_op2 = to_big_decimal(value_2);
     big_decimal dest = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -452,6 +452,7 @@ int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     big_decimal res_big = big_decimal_mul(value_1, value_2);
     *result = big_decimal_to_decimal(res_big);
     set_sign(result, sign_res);
+    return RESULT_SUCCESS;
 }
 
 // Деление
@@ -486,6 +487,7 @@ int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     dst_big_decimal.cexp = cexp;
     *result = big_decimal_to_decimal(dst_big_decimal);
     set_sign(result, sign_res);
+    return RESULT_SUCCESS;
 }
 
 // Остаток от деления Mod
@@ -514,6 +516,7 @@ int s21_mod(s21_decimal value_1, s21_decimal value_2, s21_decimal *result) {
     set_cexp(&value_1, dst_exp);
     set_sign(&value_1, sign);
     *result = value_1;
+    return RESULT_SUCCESS;
 }
 
 // Операторы сравнения
@@ -574,7 +577,7 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
         set_sign(dst, 1);
     }
     dst->bits[0] = src;
-    return 0;
+    return RESULT_SUCCESS;
 }
 
 // Преобразовывает из float
@@ -637,7 +640,7 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
 
 // В int
 int s21_from_decimal_to_int(s21_decimal src, int *dst) {
-    int error = 0;
+    int error = RESULT_SUCCESS;
     big_decimal div10 = {{10, 0, 0, 0, 0, 0}, 0, 0};
     big_decimal tmp = to_big_decimal(src);
     unsigned cexp = get_cexp(src);
@@ -646,7 +649,7 @@ int s21_from_decimal_to_int(s21_decimal src, int *dst) {
     }
     unsigned sign = get_sign(src);
     if ((!sign && (tmp.bits[0] > (unsigned)INT_MAX)) || (sign && (tmp.bits[0] > (unsigned)INT_MAX + 1))) {
-        error = 1;
+        error = RESULT_ERROR;
     } else {
         *dst = (int)tmp.bits[0];
     }
@@ -670,7 +673,7 @@ int s21_from_decimal_to_float(s21_decimal src, float *dst) {
         result /= 10;
     }
     *dst = (get_sign(src)) ? -result : result;
-    return 0;
+    return RESULT_SUCCESS;
 }
 
 // Другие функции
@@ -686,6 +689,7 @@ int s21_floor(s21_decimal value, s21_decimal *result) {
     } else {
         s21_truncate(value, result);
     }
+    return RESULT_SUCCESS;
 }
 
 // Округляет Decimal до ближайшего целого числа.
@@ -699,6 +703,7 @@ int s21_round(s21_decimal value, s21_decimal *result) {
         s21_add(value, tmp, &value);
     }
     s21_truncate(value, result);
+    return RESULT_SUCCESS;
 }
 
 // Возвращает целые цифры указанного Decimal числа; любые дробные цифры
@@ -713,6 +718,7 @@ int s21_truncate(s21_decimal value, s21_decimal *result) {
     }
     tmp.sign = sign;
     *result = big_decimal_to_decimal(tmp);
+    return RESULT_SUCCESS;
 }
 
 // Возвращает результат умножения указанного Decimal на -1.
@@ -723,10 +729,10 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
     } else {
         set_sign(result, 1);
     }
-    return 0;
+    return RESULT_SUCCESS;
 }
 
-// int main() {
+//int main() {
 //     float op2 = 1.02E+09F;
 //     s21_decimal result;
 //     s21_from_float_to_decimal(op2, &result);
@@ -738,4 +744,4 @@ int s21_negate(s21_decimal value, s21_decimal *result) {
 // //     s21_decimal result;
 // //     s21_from_float_to_decimal(op2, &result);
 // //     // +1.2712340e+02
-// }
+//}
