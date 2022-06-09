@@ -5,12 +5,18 @@ typedef struct {
     int bits[4];
 } s21_decimal;
 
+#define MAX_DECIMAL 79228162514264337593543950335.f
+#define MIN_DECIMAL -79228162514264337593543950335.f
+
 #define TRUE 1
 #define FALSE 0
 typedef unsigned short bool;
 
-#define RESULT_SUCCESS 0
-#define RESULT_ERROR   1
+#define RESULT_SUCCESS  0
+#define RESULT_ERROR    1
+#define MAXLIMIT_ERROR  1  // число слишком велико или равно бесконечности
+#define MINLIMIT_ERROR  2  // число слишком мало или равно отрицательной бесконечности
+#define DIVBYZERO_ERROR 3  // деление на 0
 
 // Арифметические операторы
 
