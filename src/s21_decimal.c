@@ -1,10 +1,10 @@
 #include "s21_decimal.h"
 
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define CEXP 0x00FF0000U
 #define SIGN 0x80000000U
@@ -15,6 +15,8 @@ typedef struct {
     unsigned sign;
 } big_decimal;
 
+int get_bit(big_decimal src, int i);
+big_decimal simple_add(big_decimal op1, big_decimal op2);
 big_decimal simple_div(big_decimal src1, big_decimal src2);
 big_decimal simple_mul(big_decimal big_op1, big_decimal big_op2);
 
@@ -42,14 +44,34 @@ big_decimal to_big_decimal(s21_decimal op) {
     return result;
 }
 
+// Возвращает остаток от деления на 10
+int big_decimal_mod_10(big_decimal src) {
+    int dst = 0;
+    for (int i = 191; i >= 0; i--) {
+        dst = dst << 1;
+        dst |= get_bit(src, i);
+        if (dst >= 10) dst -= 10;
+    }
+    return dst;
+}
+
 // Конвертирует big_decimal в s21_decimal
 s21_decimal big_decimal_to_decimal(big_decimal src) {
     big_decimal ten = {10, 0, 0, 0, 0, 0, 0, 0};
+    big_decimal one = {1, 0, 0, 0, 0, 0, 0, 0};
     unsigned cexp = src.cexp;
     unsigned sign = src.sign;
+    int tmp_out, tmp;
+    bool full = FALSE;
     while (src.bits[3] || src.bits[4] || src.bits[5]) {
+        full = TRUE;
+        tmp_out = big_decimal_mod_10(src);
         src = simple_div(src, ten);
         cexp--;
+    }
+    if (full && tmp_out > 4) {
+        tmp = big_decimal_mod_10(src);
+        src = simple_add(src, one);
     }
     s21_decimal result = {src.bits[0], src.bits[1], src.bits[2], 0};
     set_sign(&result, sign);
@@ -173,8 +195,6 @@ void set_bit(big_decimal *src, int i, int value) {
 
 // Складывает два big_decimal без учета знака
 big_decimal simple_add(big_decimal op1, big_decimal op2) {
-    // print_big_decimal(op1);
-    // print_big_decimal(op2);
     big_decimal result = {{0, 0, 0, 0, 0, 0}, op1.cexp, 0};
     unsigned long long accum = 0;
     for (int i = 0; i < 6; i++) {
@@ -182,7 +202,6 @@ big_decimal simple_add(big_decimal op1, big_decimal op2) {
         result.bits[i] = (unsigned)accum;
         accum = accum >> 32;
     }
-    // print_big_decimal(result);
     return result;
 }
 
